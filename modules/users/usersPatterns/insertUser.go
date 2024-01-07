@@ -12,7 +12,7 @@ import (
 
 type IInsertUser interface {
 	Customer() (IInsertUser, error)
-	Result() (*users.UserPassport, error)
+	Result() (*users.User, error)
 }
 
 type userReq struct {
@@ -67,18 +67,17 @@ func (f *userReq) Customer() (IInsertUser, error) {
 	return f, nil
 }
 
-func (f *userReq) Result() (*users.UserPassport, error) {
+func (f *userReq) Result() (*users.User, error) {
 	query := `
 	SELECT
-		json_build_object(
-			'user',"t",
-			'token', NULL
-		)
+		to_jsonb("t")
 	FROM(
 		SELECT
 			"u"."id",
 			"u"."email",
-			"u"."username"
+			"u"."username",
+			"u"."image",
+			"u"."bio"
 		FROM "users" "u"
 		WHERE "u"."id" = $1
 	) AS "t"`
@@ -88,10 +87,11 @@ func (f *userReq) Result() (*users.UserPassport, error) {
 		return nil, fmt.Errorf("get user failed: %v", err)
 	}
 
-	user := new(users.UserPassport)
+	user := new(users.User)
 	if err := json.Unmarshal(data, &user); err != nil {
 		return nil, fmt.Errorf("unmarshal user failed: %v", err)
 	}
+	fmt.Println("user=== ", user.Email)
 
 	return user, nil
 }

@@ -3,7 +3,7 @@ package middlewaresrepositories
 import "github.com/jmoiron/sqlx"
 
 type IMiddlewaresRepository interface {
-	FindAccessToken(userId, accessToken string) bool
+	FindAccessToken(userId int, accessToken string) bool
 }
 
 type middlewaresRepository struct {
@@ -16,7 +16,7 @@ func MiddlewaresRepository(db *sqlx.DB) IMiddlewaresRepository {
 	}
 }
 
-func (r *middlewaresRepository) FindAccessToken(userId, accessToken string) bool {
+func (r *middlewaresRepository) FindAccessToken(userId int, accessToken string) bool {
 	query := `
 	SELECT
 		(CASE WHEN COUNT(*) = 1 THEN TRUE ELSE FALSE END)

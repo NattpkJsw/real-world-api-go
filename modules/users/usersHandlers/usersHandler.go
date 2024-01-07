@@ -14,11 +14,16 @@ const (
 	signUpErr          userHandlersErrCode = "users-001"
 	signInErr          userHandlersErrCode = "users-002"
 	refreshPassportErr userHandlersErrCode = "users-003"
+	signOutErr         userHandlersErrCode = "users-004"
+	getUserProfileErr  userHandlersErrCode = "users-005"
 )
 
 type IUsersHandler interface {
 	SignUpCustomer(c *fiber.Ctx) error
 	SignIn(c *fiber.Ctx) error
+	// RefreshPassport(c *fiber.Ctx) error
+	SignOut(c *fiber.Ctx) error
+	GetUserProfile(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -121,3 +126,47 @@ func (h *usersHandler) SignIn(c *fiber.Ctx) error {
 // 	}
 // 	return entities.NewResponse(c).Success(fiber.StatusOK, passport).Res()
 // }
+
+func (h *usersHandler) SignOut(c *fiber.Ctx) error {
+	req := new(users.Oauth)
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signOutErr),
+			err.Error(),
+		).Res()
+	}
+	if err := h.usersUsecase.DeleteOauth(req.AccessToken); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signOutErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
+}
+
+func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int)
+
+	// Get profile
+	result, err := h.usersUsecase.GetUserProfile(userId)
+	if err != nil {
+		switch err.Error() {
+		case "get user failed: sql: no rows in result set":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(getUserProfileErr),
+				err.Error(),
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(getUserProfileErr),
+				err.Error(),
+			).Res()
+		}
+	}
+	return entities.NewResponse(c).Success(fiber.StatusOK, result).Res()
+}

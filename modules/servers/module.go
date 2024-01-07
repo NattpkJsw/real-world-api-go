@@ -50,5 +50,8 @@ func (m *moduleFactory) UsersModule() {
 	router := m.router.Group("/users")
 	router.Post("/signup", handler.SignUpCustomer)
 	router.Post("/signin", handler.SignIn)
+	router.Get("/", m.middle.JwtAuth(), handler.GetUserProfile)
+	router.Post("/signout", m.middle.JwtAuth(), handler.SignOut)
+	// router.Post("/refresh", handler.RefreshPassport)
 
 }

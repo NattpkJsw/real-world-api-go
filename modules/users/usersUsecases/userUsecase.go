@@ -11,8 +11,11 @@ import (
 )
 
 type IUsersUsecase interface {
-	InsertCustomer(req *users.UserRegisterReq) (*users.UserPassport, error)
+	InsertCustomer(req *users.UserRegisterReq) (*users.User, error)
 	GetPassport(req *users.UserCredential) (*users.UserPassport, error)
+	// RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error)
+	DeleteOauth(accessToken string) error
+	GetUserProfile(userId int) (*users.User, error)
 }
 
 type usersUsecase struct {
@@ -27,7 +30,7 @@ func UsersUsecase(cfg config.IConfig, usersRepository usersRepositories.IUsersRe
 	}
 }
 
-func (u *usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.UserPassport, error) {
+func (u *usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.User, error) {
 	if err := req.BcryptHashing(); err != nil {
 		return nil, err
 	}
@@ -47,7 +50,6 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 	if err != nil {
 		return nil, err
 	}
-
 	//Compare password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, fmt.Errorf("password is invalid")
@@ -62,22 +64,41 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 		Id: user.Id,
 	})
 
-	//Set passport
-	passport := &users.UserPassport{
-		User: &users.User{
-			Id:       user.Id,
-			Email:    user.Email,
-			Username: user.Username,
-		},
-		Token: &users.UserToken{
-			AccessToken:  accessToken.SignToken(),
-			RefreshToken: refreshToken.SignToken(),
-		},
+	// set user token
+	userToken := &users.UserToken{
+		User_Id:      user.Id,
+		AccessToken:  accessToken.SignToken(),
+		RefreshToken: refreshToken.SignToken(),
 	}
-	if err := u.usersRepository.InsertOauth(passport); err != nil {
+	if err := u.usersRepository.InsertOauth(userToken); err != nil {
 		return nil, err
 	}
+
+	//Set passport
+	passport := &users.UserPassport{
+		Id:       user.Id,
+		Email:    user.Email,
+		Username: user.Username,
+		Image:    user.Image,
+		Bio:      user.Bio,
+		Token:    userToken.AccessToken,
+	}
 	return passport, nil
+}
+
+func (u *usersUsecase) DeleteOauth(accessToken string) error {
+	if err := u.usersRepository.DeleteOauth(accessToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *usersUsecase) GetUserProfile(userId int) (*users.User, error) {
+	profile, err := u.usersRepository.GetProfile(userId)
+	if err != nil {
+		return nil, err
+	}
+	return profile, nil
 }
 
 // func (u *usersUsecase) RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error) {
@@ -92,14 +113,14 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 // 		return nil, err
 // 	}
 
-// 	Find profile
+// 	// Find profile
 // 	profile, err := u.usersRepository.GetProfile(oauth.UserId)
 // 	if err != nil {
 // 		return nil, err
 // 	}
 
 // 	newClaims := &users.UserClaims{
-// 		Id:     profile.Id,
+// 		Id: profile.Id,
 // 	}
 
 // 	accessToken, err := auth.NewAuth(
@@ -117,16 +138,25 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 // 		claims.ExpiresAt.Unix(),
 // 	)
 
-// 	passport := &users.UserPassport{
-// 		User: profile,
-// 		Token: &users.UserToken{
-// 			Id:           oauth.Id,
-// 			AccessToken:  accessToken.SignToken(),
-// 			RefreshToken: refreshToken,
-// 		},
+// 	// set user token
+// 	userToken := &users.UserToken{
+// 		User_Id:      profile.Id,
+// 		AccessToken:  accessToken.SignToken(),
+// 		RefreshToken: refreshToken,
 // 	}
-// 	if err := u.usersRepository.UpdateOauth(passport.Token); err != nil {
+// 	if err := u.usersRepository.InsertOauth(userToken); err != nil {
 // 		return nil, err
 // 	}
+
+// 	//Set passport
+// 	passport := &users.UserPassport{
+// 		Id:       profile.Id,
+// 		Email:    profile.Email,
+// 		Username: profile.Username,
+// 		Image:    profile.Image,
+// 		Bio:      profile.Bio,
+// 		Token:    userToken.AccessToken,
+// 	}
+
 // 	return passport, nil
 // }

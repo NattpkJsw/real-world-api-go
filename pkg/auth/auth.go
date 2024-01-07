@@ -115,9 +115,8 @@ func RepeatToken(cfg config.IJwtConfig, claims *users.UserClaims, exp int64) str
 		mapClaims: &mapClaims{
 			Claims: claims,
 			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    "firstshop-api",
+				Issuer:    "realworld-api",
 				Subject:   "refresh-token",
-				Audience:  []string{"customer", "admin"},
 				ExpiresAt: jwtTimeRepeatAdapter(exp),
 				NotBefore: jwt.NewNumericDate(time.Now()),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -179,9 +178,8 @@ func newApiKey(cfg config.IJwtConfig) IAuth {
 			mapClaims: &mapClaims{
 				Claims: nil,
 				RegisteredClaims: jwt.RegisteredClaims{
-					Issuer:    "firstshop-api",
+					Issuer:    "realworld-api",
 					Subject:   "api-key",
-					Audience:  []string{"admin", "customer"},
 					ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(2, 0, 0)),
 					NotBefore: jwt.NewNumericDate(time.Now()),
 					IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -8,11 +8,11 @@ import (
 )
 
 type User struct {
-	Id       int    `db:"id" json:"id"`
-	Email    string `db:"email" json:"email"`
-	Username string `db:"username" json:"username"`
-	Image    string `db:"image" json:"image"`
-	Bio      string `db:"bio" json:"bio"`
+	Id       int     `db:"id" json:"id"`
+	Email    string  `db:"email" json:"email"`
+	Username string  `db:"username" json:"username"`
+	Image    *string `db:"image" json:"image"`
+	Bio      *string `db:"bio" json:"bio"`
 }
 
 type UserRegisterReq struct {
@@ -22,12 +22,17 @@ type UserRegisterReq struct {
 }
 
 type UserPassport struct {
-	User  *User      `json:"user"`
-	Token *UserToken `json:"token"`
+	Id       int     `db:"id" json:"id"`
+	Email    string  `db:"email" json:"email"`
+	Username string  `db:"username" json:"username"`
+	Image    *string `db:"image" json:"image"`
+	Bio      *string `db:"bio" json:"bio"`
+	Token    string  `db:"access_token" json:"token"`
 }
 
 type UserToken struct {
 	Id           string `db:"id" json:"id"`
+	User_Id      int    `db:"user_id" json:"user_id"`
 	AccessToken  string `db:"access_token" json:"access_token"`
 	RefreshToken string `db:"refresh_token" json:"refresh_token"`
 }
@@ -38,10 +43,12 @@ type UserCredential struct {
 }
 
 type UserCredentialCheck struct {
-	Id       int    `db:"id"`
-	Email    string `db:"email"`
-	Password string `db:"password"`
-	Username string `db:"username"`
+	Id       int     `db:"id"`
+	Email    string  `db:"email"`
+	Password string  `db:"password"`
+	Username string  `db:"username"`
+	Image    *string `db:"image"`
+	Bio      *string `db:"bio"`
 }
 
 type UserClaims struct {
@@ -53,13 +60,12 @@ type UserRefreshCredential struct {
 }
 
 type Oauth struct {
-	Id     int    `db:"id" json:"id"`
-	UserId string `db:"user_id" json:"user_id"`
+	AccessToken string `json:"access_token" form:"access_token"`
 }
 
-type UserRemoveCredential struct {
-	OauthId string `json:"oauth_id" form:"oauth_id"`
-}
+// type UserRemoveCredential struct {
+// 	OauthId string `json:"oauth_id" form:"oauth_id"`
+// }
 
 func (obj *UserRegisterReq) BcryptHashing() error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(obj.Password), 10)

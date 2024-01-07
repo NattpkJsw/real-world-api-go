@@ -3,7 +3,7 @@ package middlewaresusecases
 import middlewaresrepositories "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresRepositories"
 
 type IMiddlewaresUsecase interface {
-	FindAccessToken(userId, accessToken string) bool
+	FindAccessToken(userId int, accessToken string) bool
 }
 
 type middlewaresUsecase struct {
@@ -16,6 +16,6 @@ func MiddlewaresUsecase(middlewaresRepository middlewaresrepositories.IMiddlewar
 	}
 }
 
-func (u *middlewaresUsecase) FindAccessToken(userId, accessToken string) bool {
+func (u *middlewaresUsecase) FindAccessToken(userId int, accessToken string) bool {
 	return u.middlewaresRepository.FindAccessToken(userId, accessToken)
 }
