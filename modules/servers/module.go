@@ -5,11 +5,15 @@ import (
 	middlewaresrepositories "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresRepositories"
 	middlewaresusecases "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresUsecases"
 	monitorhandlers "github.com/NattpkJsw/real-world-api-go/modules/monitor/monitorHandlers"
+	usershandlers "github.com/NattpkJsw/real-world-api-go/modules/users/usersHandlers"
+	usersrepositories "github.com/NattpkJsw/real-world-api-go/modules/users/usersRepositories"
+	usersusecases "github.com/NattpkJsw/real-world-api-go/modules/users/usersUsecases"
 	"github.com/gofiber/fiber/v2"
 )
 
 type IModulefactory interface {
 	MonitorModule()
+	UsersModule()
 }
 
 type moduleFactory struct {
@@ -36,4 +40,18 @@ func (m *moduleFactory) MonitorModule() {
 	handler := monitorhandlers.MonitorHandler(m.server.cfg)
 
 	m.router.Get("/", handler.HealthCheck)
+}
+
+func (m *moduleFactory) UsersModule() {
+	repository := usersrepositories.UsersRepository(m.server.db)
+	usecase := usersusecases.UsersUsecase(m.server.cfg, repository)
+	handler := usershandlers.UsersHandler(m.server.cfg, usecase)
+
+	router := m.router.Group("/users")
+	router.Post("/signup", handler.SignUpCustomer)
+	router.Post("/signin", handler.SignIn)
+	router.Get("/", m.middle.JwtAuth(), handler.GetUserProfile)
+	router.Post("/signout", m.middle.JwtAuth(), handler.SignOut)
+	// router.Post("/refresh", handler.RefreshPassport)
+
 }

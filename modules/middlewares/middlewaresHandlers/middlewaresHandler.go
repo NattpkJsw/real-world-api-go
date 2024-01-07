@@ -1,9 +1,12 @@
 package middlewareshandlers
 
 import (
+	"strings"
+
 	"github.com/NattpkJsw/real-world-api-go/config"
 	"github.com/NattpkJsw/real-world-api-go/modules/entities"
 	middlewaresUsecases "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresUsecases"
+	"github.com/NattpkJsw/real-world-api-go/pkg/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -13,12 +16,14 @@ type middlewaresHandlersErrCode string
 
 const (
 	routerCheckErr middlewaresHandlersErrCode = "middleware-001"
+	jwtAuthErr     middlewaresHandlersErrCode = "middleware-002"
 )
 
 type IMiddlewaresHandler interface {
 	Cors() fiber.Handler
 	RouterCheck() fiber.Handler
 	Logger() fiber.Handler
+	JwtAuth() fiber.Handler
 }
 type middlewaresHandler struct {
 	cfg                config.IConfig
@@ -60,4 +65,31 @@ func (h *middlewaresHandler) Logger() fiber.Handler {
 		TimeFormat: "02/01/2006",
 		TimeZone:   "Bangkok/Asia",
 	})
+}
+
+func (h *middlewaresHandler) JwtAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+		result, err := auth.ParseToken(h.cfg.Jwt(), token)
+		if err != nil {
+			return entities.NewResponse(c).Error(
+				fiber.ErrUnauthorized.Code,
+				string(jwtAuthErr),
+				err.Error(),
+			).Res()
+		}
+
+		claims := result.Claims
+		if !h.middlewaresUsecase.FindAccessToken(claims.Id, token) {
+			return entities.NewResponse(c).Error(
+				fiber.ErrUnauthorized.Code,
+				string(jwtAuthErr),
+				"no permission to access",
+			).Res()
+		}
+
+		//Set UserId
+		c.Locals("userId", claims.Id)
+		return c.Next()
+	}
 }
