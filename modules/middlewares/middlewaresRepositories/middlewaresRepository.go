@@ -1,6 +1,8 @@
 package middlewaresrepositories
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+)
 
 type IMiddlewaresRepository interface {
 	FindAccessToken(userId int, accessToken string) bool
@@ -21,12 +23,14 @@ func (r *middlewaresRepository) FindAccessToken(userId int, accessToken string) 
 	SELECT
 		(CASE WHEN COUNT(*) = 1 THEN TRUE ELSE FALSE END)
 	FROM "oauth"
-	WHERE "user_id" = $1
-	AND "access_token" = $2;`
+	WHERE "user_id" = $1 AND "access_token" = $2;`
 
 	var check bool
 	if err := r.db.Get(&check, query, userId, accessToken); err != nil {
 		return false
 	}
-	return true
+	if check {
+		return true
+	}
+	return false
 }

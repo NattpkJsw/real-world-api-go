@@ -1,0 +1,54 @@
+package profileshandlers
+
+import (
+	"strings"
+
+	"github.com/NattpkJsw/real-world-api-go/config"
+	"github.com/NattpkJsw/real-world-api-go/modules/entities"
+	profilesusecases "github.com/NattpkJsw/real-world-api-go/modules/profiles/profilesUsecases"
+	"github.com/gofiber/fiber/v2"
+)
+
+type profileHandlersErrCode string
+
+const (
+	getProfileErr profileHandlersErrCode = "profiles-001"
+)
+
+type IProfileHandler interface {
+	GetProfile(c *fiber.Ctx) error
+}
+
+type profileHandler struct {
+	cfg            config.IConfig
+	profileUsecase profilesusecases.IProfilesUsecase
+}
+
+func ProfileHandler(cfg config.IConfig, profileUsecase profilesusecases.IProfilesUsecase) IProfileHandler {
+	return &profileHandler{
+		cfg:            cfg,
+		profileUsecase: profileUsecase,
+	}
+}
+
+func (h *profileHandler) GetProfile(c *fiber.Ctx) error {
+	username := strings.Trim(c.Params("username"), " ")
+	result, err := h.profileUsecase.GetProfile(username, c.Locals("userId").(int))
+	if err != nil {
+		switch err.Error() {
+		case "get user failed: sql: no rows in result set":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(getProfileErr),
+				err.Error(),
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(getProfileErr),
+				err.Error(),
+			).Res()
+		}
+	}
+	return entities.NewResponse(c).Success(fiber.StatusOK, result).Res()
+}
