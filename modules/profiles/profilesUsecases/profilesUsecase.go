@@ -8,6 +8,7 @@ import (
 
 type IProfilesUsecase interface {
 	GetProfile(username string, curUserId int) (*profiles.Profile, error)
+	FollowUser(username string, curUserId int) (*profiles.Profile, error)
 }
 
 type profilesUsecase struct {
@@ -24,6 +25,14 @@ func ProfilesUsecase(cfg config.IConfig, profilesRepository profilesrepositories
 
 func (u *profilesUsecase) GetProfile(username string, curUserId int) (*profiles.Profile, error) {
 	profiles, err := u.profilesRepository.FindOneUserProfileByUsername(username, curUserId)
+	if err != nil {
+		return nil, err
+	}
+	return profiles, nil
+}
+
+func (u *profilesUsecase) FollowUser(username string, curUserId int) (*profiles.Profile, error) {
+	profiles, err := u.profilesRepository.FollowUser(username, curUserId)
 	if err != nil {
 		return nil, err
 	}

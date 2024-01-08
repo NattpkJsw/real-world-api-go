@@ -16,6 +16,7 @@ const (
 	refreshPassportErr userHandlersErrCode = "users-003"
 	signOutErr         userHandlersErrCode = "users-004"
 	getUserProfileErr  userHandlersErrCode = "users-005"
+	UpdateUserErr      userHandlersErrCode = "users-006"
 )
 
 type IUsersHandler interface {
@@ -24,6 +25,7 @@ type IUsersHandler interface {
 	// RefreshPassport(c *fiber.Ctx) error
 	SignOut(c *fiber.Ctx) error
 	GetUserProfile(c *fiber.Ctx) error
+	UpdateUser(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -169,4 +171,28 @@ func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
 		}
 	}
 	return entities.NewResponse(c).Success(fiber.StatusOK, result).Res()
+}
+
+func (h *usersHandler) UpdateUser(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int)
+	req := new(users.UserCredentialCheck)
+
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(UpdateUserErr),
+			err.Error(),
+		).Res()
+	}
+
+	req.Id = userId
+	ret, err := h.usersUsecase.UpdateUser(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(UpdateUserErr),
+			err.Error(),
+		).Res()
+	}
+	return entities.NewResponse(c).Success(fiber.StatusOK, ret).Res()
 }

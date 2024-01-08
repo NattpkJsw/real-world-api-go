@@ -1,7 +1,9 @@
 package profilesrepositories
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/NattpkJsw/real-world-api-go/modules/profiles"
 	"github.com/jmoiron/sqlx"
@@ -9,6 +11,7 @@ import (
 
 type IProfilesRepository interface {
 	FindOneUserProfileByUsername(username string, curUserId int) (*profiles.Profile, error)
+	FollowUser(username string, curUserId int) (*profiles.Profile, error)
 }
 
 type profilesRepository struct {
@@ -42,8 +45,38 @@ func (r *profilesRepository) FindOneUserProfileByUsername(username string, curUs
 
 	profile := new(profiles.Profile)
 	if err := r.db.Get(profile, query, username, curUserId); err != nil {
-		fmt.Println("profile === ", profile)
 		return nil, fmt.Errorf("user profile not found")
 	}
 	return profile, nil
+}
+
+func (r *profilesRepository) FollowUser(username string, curUserId int) (*profiles.Profile, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	query := `
+	INSERT INTO "user_follows"
+	(
+		"following_id",
+		"follower_id"
+	)
+	SELECT
+    (
+		SELECT 
+		"id" 
+		FROM "users" 
+		WHERE "username" = $1),$2
+	WHERE 
+	(
+    	SELECT 
+			"id" 
+		FROM "users" 
+		WHERE "username" = $1
+	) != $2;
+	`
+	if _, err := r.db.ExecContext(ctx, query, username, curUserId); err != nil {
+		return nil, fmt.Errorf("fail to follow the user")
+	}
+
+	return r.FindOneUserProfileByUsername(username, curUserId)
 }
