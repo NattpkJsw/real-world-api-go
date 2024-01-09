@@ -69,4 +69,5 @@ func (m *moduleFactory) ProfileModule() {
 	router := m.router.Group("/profiles")
 	router.Get("/:username", m.middle.JwtAuth(), handler.GetProfile)
 	router.Post("/:username/follow", m.middle.JwtAuth(), handler.FollowUser)
+	router.Delete("/:username/follow", m.middle.JwtAuth(), handler.UnfollowUser)
 }

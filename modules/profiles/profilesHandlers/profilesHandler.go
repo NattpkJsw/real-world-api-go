@@ -12,13 +12,15 @@ import (
 type profileHandlersErrCode string
 
 const (
-	getProfileErr profileHandlersErrCode = "profiles-001"
-	followUserErr profileHandlersErrCode = "profiles-002"
+	getProfileErr   profileHandlersErrCode = "profiles-001"
+	followUserErr   profileHandlersErrCode = "profiles-002"
+	unfollowUserErr profileHandlersErrCode = "profiles-003"
 )
 
 type IProfileHandler interface {
 	GetProfile(c *fiber.Ctx) error
 	FollowUser(c *fiber.Ctx) error
+	UnfollowUser(c *fiber.Ctx) error
 }
 
 type profileHandler struct {
@@ -70,6 +72,28 @@ func (h *profileHandler) FollowUser(c *fiber.Ctx) error {
 			return entities.NewResponse(c).Error(
 				fiber.ErrInternalServerError.Code,
 				string(followUserErr),
+				err.Error(),
+			).Res()
+		}
+	}
+	return entities.NewResponse(c).Success(fiber.StatusOK, result).Res()
+}
+
+func (h *profileHandler) UnfollowUser(c *fiber.Ctx) error {
+	username := strings.Trim(c.Params("username"), " ")
+	result, err := h.profileUsecase.UnfollowUser(username, c.Locals("userId").(int))
+	if err != nil {
+		switch err.Error() {
+		case "get user failed: sql: no rows in result set":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(unfollowUserErr),
+				err.Error(),
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(unfollowUserErr),
 				err.Error(),
 			).Res()
 		}

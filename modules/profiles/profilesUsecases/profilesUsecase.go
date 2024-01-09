@@ -9,6 +9,7 @@ import (
 type IProfilesUsecase interface {
 	GetProfile(username string, curUserId int) (*profiles.Profile, error)
 	FollowUser(username string, curUserId int) (*profiles.Profile, error)
+	UnfollowUser(username string, curUserId int) (*profiles.Profile, error)
 }
 
 type profilesUsecase struct {
@@ -33,6 +34,14 @@ func (u *profilesUsecase) GetProfile(username string, curUserId int) (*profiles.
 
 func (u *profilesUsecase) FollowUser(username string, curUserId int) (*profiles.Profile, error) {
 	profiles, err := u.profilesRepository.FollowUser(username, curUserId)
+	if err != nil {
+		return nil, err
+	}
+	return profiles, nil
+}
+
+func (u *profilesUsecase) UnfollowUser(username string, curUserId int) (*profiles.Profile, error) {
+	profiles, err := u.profilesRepository.UnfollowUser(username, curUserId)
 	if err != nil {
 		return nil, err
 	}
