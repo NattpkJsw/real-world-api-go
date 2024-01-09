@@ -5,6 +5,9 @@ import (
 	middlewaresrepositories "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresRepositories"
 	middlewaresusecases "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresUsecases"
 	monitorhandlers "github.com/NattpkJsw/real-world-api-go/modules/monitor/monitorHandlers"
+	profileshandlers "github.com/NattpkJsw/real-world-api-go/modules/profiles/profilesHandlers"
+	profilesrepositories "github.com/NattpkJsw/real-world-api-go/modules/profiles/profilesRepositories"
+	profilesusecases "github.com/NattpkJsw/real-world-api-go/modules/profiles/profilesUsecases"
 	usershandlers "github.com/NattpkJsw/real-world-api-go/modules/users/usersHandlers"
 	usersrepositories "github.com/NattpkJsw/real-world-api-go/modules/users/usersRepositories"
 	usersusecases "github.com/NattpkJsw/real-world-api-go/modules/users/usersUsecases"
@@ -14,6 +17,7 @@ import (
 type IModulefactory interface {
 	MonitorModule()
 	UsersModule()
+	ProfileModule()
 }
 
 type moduleFactory struct {
@@ -52,6 +56,18 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/signin", handler.SignIn)
 	router.Get("/", m.middle.JwtAuth(), handler.GetUserProfile)
 	router.Post("/signout", m.middle.JwtAuth(), handler.SignOut)
+	router.Put("/", m.middle.JwtAuth(), handler.UpdateUser)
 	// router.Post("/refresh", handler.RefreshPassport)
 
+}
+
+func (m *moduleFactory) ProfileModule() {
+	repository := profilesrepositories.ProfilesRepository(m.server.db)
+	usecase := profilesusecases.ProfilesUsecase(m.server.cfg, repository)
+	handler := profileshandlers.ProfileHandler(m.server.cfg, usecase)
+
+	router := m.router.Group("/profiles")
+	router.Get("/:username", m.middle.JwtAuth(), handler.GetProfile)
+	router.Post("/:username/follow", m.middle.JwtAuth(), handler.FollowUser)
+	router.Delete("/:username/follow", m.middle.JwtAuth(), handler.UnfollowUser)
 }

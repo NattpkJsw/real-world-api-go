@@ -77,6 +77,16 @@ func (obj *UserRegisterReq) BcryptHashing() error {
 	return nil
 }
 
+func (obj *UserCredentialCheck) BcryptHashingUpdate() error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(obj.Password), 10)
+	if err != nil {
+		return fmt.Errorf("hash password failed: %v", err)
+
+	}
+	obj.Password = string(hashedPassword)
+	return nil
+}
+
 func (obj *UserRegisterReq) IsEmail() bool {
 	match, err := regexp.MatchString(`^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$`, obj.Email)
 	if err != nil {

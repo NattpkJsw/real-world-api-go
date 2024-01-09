@@ -18,6 +18,7 @@ type IUsersRepository interface {
 	// UpdateOauth(req *users.UserToken) error
 	GetProfile(userId int) (*users.User, error)
 	DeleteOauth(accessToken string) error
+	UpdateUser(user *users.UserCredentialCheck) (*users.User, error)
 }
 
 type usersRepository struct {
@@ -146,4 +147,51 @@ func (r *usersRepository) GetProfile(userId int) (*users.User, error) {
 		return nil, fmt.Errorf("get user failed: %v", err)
 	}
 	return profile, nil
+}
+
+func (r *usersRepository) UpdateUser(user *users.UserCredentialCheck) (*users.User, error) {
+	// Build the update query dynamically
+	query := `UPDATE "users" SET`
+	params := make(map[string]any)
+	params["id"] = user.Id
+
+	if user.Username != "" {
+		query += " username = :username,"
+		params["username"] = user.Username
+	}
+
+	if user.Email != "" {
+		query += " email = :email,"
+		params["email"] = user.Email
+	}
+
+	if *user.Bio != "" {
+		query += " bio = :bio,"
+		params["bio"] = user.Bio
+	}
+
+	if *user.Image != "" {
+		query += " image = :image,"
+		params["image"] = user.Image
+	}
+
+	if user.Password != "" {
+		if err := user.BcryptHashingUpdate(); err != nil {
+			return nil, err
+		}
+		query += " password = :password,"
+		params["password"] = user.Password
+	}
+
+	// Remove the trailing comma
+	query = query[:len(query)-1]
+	query += " WHERE id = :id"
+
+	// Execute the query
+
+	if _, err := r.db.NamedExec(query, params); err != nil {
+		return nil, err
+	}
+
+	return r.GetProfile(user.Id)
 }
