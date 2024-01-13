@@ -1,6 +1,10 @@
 package servers
 
 import (
+	articleshandlers "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesHandlers"
+	articlesrepositories "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesRepositories"
+	articlesusecases "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesUsecases"
+	"github.com/NattpkJsw/real-world-api-go/modules/middlewares"
 	middlewareshandlers "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresHandlers"
 	middlewaresrepositories "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresRepositories"
 	middlewaresusecases "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresUsecases"
@@ -18,6 +22,7 @@ type IModulefactory interface {
 	MonitorModule()
 	UsersModule()
 	ProfileModule()
+	ArticleModule()
 }
 
 type moduleFactory struct {
@@ -54,9 +59,9 @@ func (m *moduleFactory) UsersModule() {
 	router := m.router.Group("/users")
 	router.Post("/signup", handler.SignUpCustomer)
 	router.Post("/signin", handler.SignIn)
-	router.Get("/", m.middle.JwtAuth(), handler.GetUserProfile)
-	router.Post("/signout", m.middle.JwtAuth(), handler.SignOut)
-	router.Put("/", m.middle.JwtAuth(), handler.UpdateUser)
+	router.Get("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.GetUserProfile)
+	router.Post("/signout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.SignOut)
+	router.Put("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateUser)
 	// router.Post("/refresh", handler.RefreshPassport)
 
 }
@@ -67,7 +72,16 @@ func (m *moduleFactory) ProfileModule() {
 	handler := profileshandlers.ProfileHandler(m.server.cfg, usecase)
 
 	router := m.router.Group("/profiles")
-	router.Get("/:username", m.middle.JwtAuth(), handler.GetProfile)
-	router.Post("/:username/follow", m.middle.JwtAuth(), handler.FollowUser)
-	router.Delete("/:username/follow", m.middle.JwtAuth(), handler.UnfollowUser)
+	router.Get("/:username", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetProfile)
+	router.Post("/:username/follow", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.FollowUser)
+	router.Delete("/:username/follow", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UnfollowUser)
+}
+
+func (m *moduleFactory) ArticleModule() {
+	repository := articlesrepositories.ArticlesRepository(m.server.db)
+	usecase := articlesusecases.ArticlesUsecase(m.server.cfg, repository)
+	handler := articleshandlers.ArticlesHandler(m.server.cfg, usecase)
+
+	router := m.router.Group("/articles")
+	router.Get("/:slug", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetSingleArticle)
 }

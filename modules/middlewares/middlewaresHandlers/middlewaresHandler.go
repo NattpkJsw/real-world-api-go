@@ -5,6 +5,7 @@ import (
 
 	"github.com/NattpkJsw/real-world-api-go/config"
 	"github.com/NattpkJsw/real-world-api-go/modules/entities"
+	"github.com/NattpkJsw/real-world-api-go/modules/middlewares"
 	middlewaresUsecases "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresUsecases"
 	"github.com/NattpkJsw/real-world-api-go/pkg/auth"
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +24,7 @@ type IMiddlewaresHandler interface {
 	Cors() fiber.Handler
 	RouterCheck() fiber.Handler
 	Logger() fiber.Handler
-	JwtAuth() fiber.Handler
+	JwtAuth(jwtLevel string) fiber.Handler
 }
 type middlewaresHandler struct {
 	cfg                config.IConfig
@@ -67,11 +68,16 @@ func (h *middlewaresHandler) Logger() fiber.Handler {
 	})
 }
 
-func (h *middlewaresHandler) JwtAuth() fiber.Handler {
+func (h *middlewaresHandler) JwtAuth(jwtLevel string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+		if jwtLevel == string(middlewares.ReadLevel) && token == "" {
+			c.Locals("userId", 0)
+			return c.Next()
+		}
 		result, err := auth.ParseToken(h.cfg.Jwt(), token)
 		if err != nil {
+
 			return entities.NewResponse(c).Error(
 				fiber.ErrUnauthorized.Code,
 				string(jwtAuthErr),
