@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/NattpkJsw/real-world-api-go/modules/articles"
+	articlespatterns "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesPatterns"
 	"github.com/jmoiron/sqlx"
 )
 
 type IArticlesRepository interface {
 	GetSingleArticle(slug string, userId int) (*articles.Article, error)
+	GetArticlesList(req *articles.ArticleFilter, userId int) ([]*articles.Article, int, error)
 }
 
 type articlesRepository struct {
@@ -34,10 +36,9 @@ func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*article
 			"a"."body",
 			(
 				SELECT coalesce(array_to_json(array_agg("t"."name")),'[]'::json)
-				FROM "articles" "a"
-				JOIN "article_tags" AS "at" ON "a"."id" = "at"."article_id"
+				FROM "article_tags" "at"
 				JOIN "tags" AS "t" ON "at"."tag_id" = "t"."id"
-				WHERE "a"."slug" = $1
+				WHERE "a"."id" = "at"."article_id"
 			) AS "taglist",
 			"a"."created_at",
 			"a"."updated_at",
@@ -53,11 +54,8 @@ func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*article
 			(
 				SELECT COUNT(*)
 				FROM "article_favorites" "af"
-				WHERE "af"."article_id" = (
-					SELECT "a"."id"
-					FROM "articles" "a"
-					WHERE "a"."slug" = $1)
-			) AS "favcount",
+				WHERE "af"."article_id" = "a"."id"
+			) AS "favoritesCount",
 			(
 				SELECT 
 					json_build_object(
@@ -69,15 +67,13 @@ func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*article
 							WHEN EXISTS (
 								SELECT 1
 								FROM "user_follows" "uf"
-								JOIN "articles" AS "a" ON "a"."author_id" = "uf"."following_id"
-								WHERE "a"."slug" = $1  AND "uf"."follower_id" = $2
+								WHERE "a"."author_id" = "uf"."following_id"  AND "uf"."follower_id" = $2
 							) THEN TRUE 
 							ELSE FALSE 
 						END
 					)
 				FROM "users" "u"
-				JOIN "articles" AS "a" ON "a"."author_id" = "u"."id"
-				WHERE "a"."slug" = $1
+				WHERE "a"."author_id" = "u"."id"
 			) AS "author"
 			FROM "articles" "a"
 			WHERE "a"."slug" = $1
@@ -94,4 +90,14 @@ func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*article
 		return nil, fmt.Errorf("unmarshal article failed: %v", err)
 	}
 	return article, nil
+}
+
+func (r *articlesRepository) GetArticlesList(req *articles.ArticleFilter, userId int) ([]*articles.Article, int, error) {
+	builder := articlespatterns.FindArticleBuilder(r.db, req)
+	engineer := articlespatterns.FindProductEngineer(builder)
+
+	result, err := engineer.FindArticle(userId).Result()
+	count := len(result)
+
+	return result, count, err
 }

@@ -9,23 +9,8 @@ type Article struct {
 	CreatedAt      *string   `json:"created_at"`
 	UpdatedAt      *string   `json:"updated_at"`
 	Favorited      *bool     `json:"favorited"`
-	FavoritesCount *int      `json:"favcount"`
+	FavoritesCount *int      `json:"favoritesCount"`
 	Author         *Author   `json:"author"`
-}
-
-type Tag struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-}
-
-type ArticleTag struct {
-	ArticleId int `db:"article_id"`
-	TagId     int `db:"tag_id"`
-}
-
-type ArticleFavorite struct {
-	UserId    int `db:"user_id"`
-	ArticleId int `db:"article_id"`
 }
 
 type Author struct {
@@ -33,4 +18,17 @@ type Author struct {
 	Bio       *string `json:"bio"`
 	Image     *string `json:"image"`
 	Following *bool   `json:"following"`
+}
+
+type ArticleList struct {
+	Article       []*Article `json:"article"`
+	ArticlesCount int        `json:"articlesCount"`
+}
+
+type ArticleFilter struct {
+	Tag       string `query:"tag"`
+	Author    string `query:"author"`
+	Favorited string `query:"favorited"`
+	Limit     int    `query:"limit"`
+	Offset    int    `query:"offset"`
 }

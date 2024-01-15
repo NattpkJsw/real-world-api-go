@@ -84,4 +84,6 @@ func (m *moduleFactory) ArticleModule() {
 
 	router := m.router.Group("/articles")
 	router.Get("/:slug", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetSingleArticle)
+	router.Get("/", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesList)
+
 }

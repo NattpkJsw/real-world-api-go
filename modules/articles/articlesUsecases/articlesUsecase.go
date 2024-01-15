@@ -8,6 +8,7 @@ import (
 
 type IArticlesUsecase interface {
 	GetSingleArticle(slug string, userId int) (*articles.Article, error)
+	GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error)
 }
 
 type articlesUsecase struct {
@@ -28,4 +29,15 @@ func (u *articlesUsecase) GetSingleArticle(slug string, userId int) (*articles.A
 		return nil, err
 	}
 	return article, nil
+}
+
+func (u *articlesUsecase) GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error) {
+	articleList, count, err := u.articlesRepository.GetArticlesList(req, userId)
+
+	articlesOut := &articles.ArticleList{
+		Article:       articleList,
+		ArticlesCount: count,
+	}
+
+	return articlesOut, err
 }
