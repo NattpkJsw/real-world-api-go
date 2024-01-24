@@ -18,6 +18,7 @@ const (
 	getArticlesErr      articlesHandlersErrCode = "article-002"
 	getArticlesFeedErr  articlesHandlersErrCode = "article-003"
 	createArticleErr    articlesHandlersErrCode = "article-004"
+	updateArticleErr    articlesHandlersErrCode = "article-005"
 )
 
 type IArticleshandler interface {
@@ -25,6 +26,7 @@ type IArticleshandler interface {
 	GetArticlesList(c *fiber.Ctx) error
 	GetArticlesFeed(c *fiber.Ctx) error
 	CreateArticle(c *fiber.Ctx) error
+	UpdateArticle(c *fiber.Ctx) error
 }
 
 type articlesHandler struct {
@@ -146,4 +148,37 @@ func (h *articlesHandler) CreateArticle(c *fiber.Ctx) error {
 		).Res()
 	}
 	return entities.NewResponse(c).Success(fiber.StatusCreated, article).Res()
+}
+
+func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
+	pathVariable := strings.Trim(c.Params("slug"), " ")
+	slug, err := url.QueryUnescape(pathVariable)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(getSingleArticleErr),
+			err.Error(),
+		).Res()
+	}
+	userID := c.Locals("userId").(int)
+	req := &articles.ArticleCredential{}
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(updateArticleErr),
+			err.Error(),
+		).Res()
+	}
+	req.Slug = slug
+
+	article, err := h.articlesUsecase.UpdateArticle(req, userID)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(updateArticleErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, article).Res()
 }

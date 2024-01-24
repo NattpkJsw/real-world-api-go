@@ -11,6 +11,7 @@ type IArticlesUsecase interface {
 	GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error)
 	GetArticlesFeed(req *articles.ArticleFeedFilter, userId int) (*articles.ArticleList, error)
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
+	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
 }
 
 type articlesUsecase struct {
@@ -66,4 +67,14 @@ func (u *articlesUsecase) GetArticlesFeed(req *articles.ArticleFeedFilter, userI
 
 func (u *articlesUsecase) CreateArticle(req *articles.ArticleCredential) (*articles.Article, error) {
 	return u.articlesRepository.CreateArticle(req)
+}
+
+func (u *articlesUsecase) UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error) {
+	articleID, err := u.articlesRepository.GetArticleIdBySlug(req.Slug)
+	if err != nil {
+		return nil, err
+	}
+	req.Id = articleID
+
+	return u.articlesRepository.UpdateArticle(req, userID)
 }

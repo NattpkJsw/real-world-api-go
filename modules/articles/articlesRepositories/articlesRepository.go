@@ -14,6 +14,7 @@ type IArticlesRepository interface {
 	GetArticlesList(req *articles.ArticleFilter, userId int) ([]*articles.Article, int, error)
 	GetArticleIdBySlug(slug string) (int, error)
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
+	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
 }
 
 type articlesRepository struct {
@@ -130,4 +131,37 @@ func (r *articlesRepository) CreateArticle(req *articles.ArticleCredential) (*ar
 	}
 
 	return article, nil
+}
+
+func (r *articlesRepository) UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error) {
+	query := `
+	UPDATE "articles" SET`
+	params := make(map[string]any)
+	params["id"] = req.Id
+
+	if req.Title != "" {
+		query += " title = :title,"
+		query += " slug = :slug,"
+		params["title"] = req.Title
+		params["slug"] = req.Title
+	}
+
+	if req.Body != "" {
+		query += " body = :body,"
+		params["body"] = req.Body
+	}
+
+	if req.Description != "" {
+		query += " description = :description,"
+		params["description"] = req.Description
+	}
+
+	query = query[:len(query)-1]
+	query += " WHERE id = :id;"
+	fmt.Println("query === ", query)
+	if _, err := r.db.NamedExec(query, params); err != nil {
+		return nil, fmt.Errorf("update article fail:%v", err)
+	}
+
+	return r.GetSingleArticle(req.Id, userID)
 }

@@ -45,4 +45,5 @@ type ArticleCredential struct {
 	Description string    `json:"description"`
 	Body        string    `json:"body"`
 	TagList     []*string `json:"tagList"`
+	Slug        string    `json:"slug"`
 }

@@ -87,5 +87,6 @@ func (m *moduleFactory) ArticleModule() {
 	router.Get("/", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesList)
 	router.Get("/feed", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesFeed)
 	router.Post("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.CreateArticle)
+	router.Put("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateArticle)
 
 }
