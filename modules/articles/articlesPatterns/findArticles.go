@@ -23,7 +23,6 @@ type IFindArticleBuilder interface {
 	closeJsonQuery()
 	resetQuery()
 	Result() ([]*articles.Article, error)
-	Count() int
 	PrintQUery()
 }
 
@@ -150,7 +149,11 @@ func (b *findArticleBuilder) whereQuery() {
 	if b.req.Author != "" {
 		b.values = append(b.values, b.req.Author)
 		queryWhereStack = append(queryWhereStack, ` 
-		AND "a"."author_id" IN ?`)
+		AND "a"."author_id" IN (
+			SELECT "u"."id"
+			FROM "users" "u"
+			WHERE "u"."username" = ?
+		)`)
 	}
 
 	if b.req.Favorited != "" {
@@ -212,19 +215,6 @@ func (b *findArticleBuilder) Result() ([]*articles.Article, error) {
 	fmt.Println("length === ", len(articelsResult))
 
 	return articelsResult, nil
-}
-
-func (b *findArticleBuilder) Count() int {
-	_, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	defer cancel()
-
-	var count int
-	if err := b.db.Get(&count, b.query, b.values...); err != nil {
-		log.Printf("count articles failed: %v\n", err)
-		return 0
-	}
-	b.resetQuery()
-	return count
 }
 
 func (b *findArticleBuilder) PrintQUery() {

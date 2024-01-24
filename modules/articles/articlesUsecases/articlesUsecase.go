@@ -9,6 +9,8 @@ import (
 type IArticlesUsecase interface {
 	GetSingleArticle(slug string, userId int) (*articles.Article, error)
 	GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error)
+	GetArticlesFeed(req *articles.ArticleFeedFilter, userId int) (*articles.ArticleList, error)
+	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 }
 
 type articlesUsecase struct {
@@ -24,7 +26,12 @@ func ArticlesUsecase(cfg config.IConfig, articlesRepository articlesrepositories
 }
 
 func (u *articlesUsecase) GetSingleArticle(slug string, userId int) (*articles.Article, error) {
-	article, err := u.articlesRepository.GetSingleArticle(slug, userId)
+	articleId, err := u.articlesRepository.GetArticleIdBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	article, err := u.articlesRepository.GetSingleArticle(articleId, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -40,4 +47,23 @@ func (u *articlesUsecase) GetArticlesList(req *articles.ArticleFilter, userId in
 	}
 
 	return articlesOut, err
+}
+
+func (u *articlesUsecase) GetArticlesFeed(req *articles.ArticleFeedFilter, userId int) (*articles.ArticleList, error) {
+	input := &articles.ArticleFilter{
+		Limit:  req.Limit,
+		Offset: req.Offset,
+	}
+	articleList, count, err := u.articlesRepository.GetArticlesList(input, userId)
+
+	articlesOut := &articles.ArticleList{
+		Article:       articleList,
+		ArticlesCount: count,
+	}
+
+	return articlesOut, err
+}
+
+func (u *articlesUsecase) CreateArticle(req *articles.ArticleCredential) (*articles.Article, error) {
+	return u.articlesRepository.CreateArticle(req)
 }

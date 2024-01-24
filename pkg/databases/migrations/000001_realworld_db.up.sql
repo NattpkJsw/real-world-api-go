@@ -41,8 +41,8 @@ CREATE TABLE "user_follows" (
 CREATE TABLE "articles" (
   "id" SERIAL PRIMARY KEY,
   "author_id" INT NOT NULL,
-  "slug" VARCHAR,
-  "title" VARCHAR NOT NULL,
+  "slug" VARCHAR UNIQUE NOT NULL ,
+  "title" VARCHAR UNIQUE NOT NULL ,
   "description" VARCHAR,
   "body" TEXT,
   "created_at" TIMESTAMP NOT NULL DEFAULT now(),
@@ -65,7 +65,7 @@ CREATE TABLE "comments" (
 
 CREATE TABLE "tags" (
   "id" SERIAL PRIMARY KEY,
-  "name" VARCHAR NOT NULL
+  "name" VARCHAR NOT NULL UNIQUE
 );
 
 CREATE TABLE "article_tags" (

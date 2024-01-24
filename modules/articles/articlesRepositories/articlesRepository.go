@@ -10,8 +10,10 @@ import (
 )
 
 type IArticlesRepository interface {
-	GetSingleArticle(slug string, userId int) (*articles.Article, error)
+	GetSingleArticle(articleId int, userId int) (*articles.Article, error)
 	GetArticlesList(req *articles.ArticleFilter, userId int) ([]*articles.Article, int, error)
+	GetArticleIdBySlug(slug string) (int, error)
+	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 }
 
 type articlesRepository struct {
@@ -24,7 +26,7 @@ func ArticlesRepository(db *sqlx.DB) IArticlesRepository {
 	}
 }
 
-func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*articles.Article, error) {
+func (r *articlesRepository) GetSingleArticle(articleId int, userId int) (*articles.Article, error) {
 	query := `
 	SELECT
 		to_jsonb("ar")
@@ -76,20 +78,33 @@ func (r *articlesRepository) GetSingleArticle(slug string, userId int) (*article
 				WHERE "a"."author_id" = "u"."id"
 			) AS "author"
 			FROM "articles" "a"
-			WHERE "a"."slug" = $1
+			WHERE "a"."id" = $1
 			LIMIT 1
 	) AS "ar";`
 
 	articleBytes := make([]byte, 0)
 	article := new(articles.Article)
 
-	if err := r.db.Get(&articleBytes, query, slug, userId); err != nil {
+	if err := r.db.Get(&articleBytes, query, articleId, userId); err != nil {
 		return nil, fmt.Errorf("get article failed: %v", err)
 	}
 	if err := json.Unmarshal(articleBytes, &article); err != nil {
 		return nil, fmt.Errorf("unmarshal article failed: %v", err)
 	}
 	return article, nil
+}
+
+func (r *articlesRepository) GetArticleIdBySlug(slug string) (int, error) {
+	query := `
+	SELECT "a"."id"
+	FROM "articles" "a"
+	WHERE "a"."slug" = $1`
+
+	var id int
+	if err := r.db.Get(&id, query, slug); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func (r *articlesRepository) GetArticlesList(req *articles.ArticleFilter, userId int) ([]*articles.Article, int, error) {
@@ -100,4 +115,19 @@ func (r *articlesRepository) GetArticlesList(req *articles.ArticleFilter, userId
 	count := len(result)
 
 	return result, count, err
+}
+
+func (r *articlesRepository) CreateArticle(req *articles.ArticleCredential) (*articles.Article, error) {
+	builder := articlespatterns.AddArticleBuilder(r.db, req)
+	articleId, err := articlespatterns.AddArticleEngineer(builder).AddArticle()
+	if err != nil {
+		return nil, err
+	}
+
+	article, err := r.GetSingleArticle(articleId, req.Author)
+	if err != nil {
+		return nil, err
+	}
+
+	return article, nil
 }

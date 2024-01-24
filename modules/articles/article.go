@@ -32,3 +32,17 @@ type ArticleFilter struct {
 	Limit     int    `query:"limit"`
 	Offset    int    `query:"offset"`
 }
+
+type ArticleFeedFilter struct {
+	Limit  int `query:"limit"`
+	Offset int `query:"offset"`
+}
+
+type ArticleCredential struct {
+	Id          int       `json:"id"`
+	Author      int       `json:"author_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Body        string    `json:"body"`
+	TagList     []*string `json:"tagList"`
+}
