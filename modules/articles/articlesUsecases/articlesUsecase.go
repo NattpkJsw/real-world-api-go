@@ -12,6 +12,7 @@ type IArticlesUsecase interface {
 	GetArticlesFeed(req *articles.ArticleFeedFilter, userId int) (*articles.ArticleList, error)
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
+	DeleteArticle(slug string, userID int) error
 }
 
 type articlesUsecase struct {
@@ -77,4 +78,12 @@ func (u *articlesUsecase) UpdateArticle(req *articles.ArticleCredential, userID 
 	req.Id = articleID
 
 	return u.articlesRepository.UpdateArticle(req, userID)
+}
+
+func (u *articlesUsecase) DeleteArticle(slug string, userID int) error {
+	artcleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
+	if err != nil {
+		return err
+	}
+	return u.articlesRepository.DeleteArticle(artcleID, userID)
 }

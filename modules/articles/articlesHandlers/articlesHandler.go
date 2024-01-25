@@ -19,6 +19,7 @@ const (
 	getArticlesFeedErr  articlesHandlersErrCode = "article-003"
 	createArticleErr    articlesHandlersErrCode = "article-004"
 	updateArticleErr    articlesHandlersErrCode = "article-005"
+	deleteArticleErr    articlesHandlersErrCode = "article-006"
 )
 
 type IArticleshandler interface {
@@ -27,6 +28,7 @@ type IArticleshandler interface {
 	GetArticlesFeed(c *fiber.Ctx) error
 	CreateArticle(c *fiber.Ctx) error
 	UpdateArticle(c *fiber.Ctx) error
+	DeleteArticle(c *fiber.Ctx) error
 }
 
 type articlesHandler struct {
@@ -181,4 +183,25 @@ func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, article).Res()
+}
+
+func (h *articlesHandler) DeleteArticle(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int)
+	pathVariable := strings.Trim(c.Params("slug"), " ")
+	slug, err := url.QueryUnescape(pathVariable)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(deleteArticleErr),
+			err.Error(),
+		).Res()
+	}
+	if err := h.articlesUsecase.DeleteArticle(slug, userId); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(deleteArticleErr),
+			err.Error(),
+		).Res()
+	}
+	return entities.NewResponse(c).Success(fiber.StatusNoContent, nil).Res()
 }

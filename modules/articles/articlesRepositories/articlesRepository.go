@@ -1,6 +1,7 @@
 package articlesrepositories
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -15,6 +16,7 @@ type IArticlesRepository interface {
 	GetArticleIdBySlug(slug string) (int, error)
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
+	DeleteArticle(articleID, userID int) error
 }
 
 type articlesRepository struct {
@@ -103,7 +105,7 @@ func (r *articlesRepository) GetArticleIdBySlug(slug string) (int, error) {
 
 	var id int
 	if err := r.db.Get(&id, query, slug); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("get articleID failed: %v", err)
 	}
 	return id, nil
 }
@@ -160,8 +162,20 @@ func (r *articlesRepository) UpdateArticle(req *articles.ArticleCredential, user
 	query += " WHERE id = :id;"
 	fmt.Println("query === ", query)
 	if _, err := r.db.NamedExec(query, params); err != nil {
-		return nil, fmt.Errorf("update article fail:%v", err)
+		return nil, fmt.Errorf("update article failed:%v", err)
 	}
 
 	return r.GetSingleArticle(req.Id, userID)
+}
+
+func (r *articlesRepository) DeleteArticle(articleID, userID int) error {
+	query := `
+	DELETE
+	FROM "articles"
+	WHERE "id" = $1 AND "author_id" = $2;`
+
+	if _, err := r.db.ExecContext(context.Background(), query, articleID, userID); err != nil {
+		return fmt.Errorf("delete article failed: %v", err)
+	}
+	return nil
 }

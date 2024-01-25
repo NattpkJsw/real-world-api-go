@@ -88,5 +88,6 @@ func (m *moduleFactory) ArticleModule() {
 	router.Get("/feed", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesFeed)
 	router.Post("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.CreateArticle)
 	router.Put("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateArticle)
+	router.Delete("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteArticle)
 
 }
