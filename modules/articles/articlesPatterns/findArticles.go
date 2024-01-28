@@ -212,8 +212,6 @@ func (b *findArticleBuilder) Result() ([]*articles.Article, error) {
 	}
 	b.resetQuery()
 
-	fmt.Println("length === ", len(articelsResult))
-
 	return articelsResult, nil
 }
 

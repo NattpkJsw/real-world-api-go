@@ -4,6 +4,9 @@ import (
 	articleshandlers "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesHandlers"
 	articlesrepositories "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesRepositories"
 	articlesusecases "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesUsecases"
+	commentshandlers "github.com/NattpkJsw/real-world-api-go/modules/comments/commentsHandlers"
+	commentsrepositories "github.com/NattpkJsw/real-world-api-go/modules/comments/commentsRepositories"
+	commentsusecases "github.com/NattpkJsw/real-world-api-go/modules/comments/commentsUsecases"
 	"github.com/NattpkJsw/real-world-api-go/modules/middlewares"
 	middlewareshandlers "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresHandlers"
 	middlewaresrepositories "github.com/NattpkJsw/real-world-api-go/modules/middlewares/middlewaresRepositories"
@@ -23,6 +26,7 @@ type IModulefactory interface {
 	UsersModule()
 	ProfileModule()
 	ArticleModule()
+	CommentModule()
 }
 
 type moduleFactory struct {
@@ -89,5 +93,17 @@ func (m *moduleFactory) ArticleModule() {
 	router.Post("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.CreateArticle)
 	router.Put("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateArticle)
 	router.Delete("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteArticle)
+
+}
+
+func (m *moduleFactory) CommentModule() {
+	commentRepository := commentsrepositories.CommentRepository(m.server.db)
+	articleRepository := articlesrepositories.ArticlesRepository(m.server.db)
+	commentUsecase := commentsusecases.CommentUsecase(m.server.cfg, commentRepository, articleRepository)
+	handler := commentshandlers.CommentsHandler(m.server.cfg, commentUsecase)
+
+	router := m.router.Group("/articles/:slug")
+	router.Get("/comments", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.FindComments)
+	router.Post("/comments", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.InsertComment)
 
 }
