@@ -22,6 +22,7 @@ const (
 	deleteArticleErr     articlesHandlersErrCode = "article-006"
 	favoriteArticleErr   articlesHandlersErrCode = "article-007"
 	unfavoriteArticleErr articlesHandlersErrCode = "article-008"
+	getTagslistErr       articlesHandlersErrCode = "article-009"
 )
 
 type IArticleshandler interface {
@@ -33,6 +34,7 @@ type IArticleshandler interface {
 	DeleteArticle(c *fiber.Ctx) error
 	FavoriteArticle(c *fiber.Ctx) error
 	UnfavoriteArticle(c *fiber.Ctx) error
+	GetTagsList(c *fiber.Ctx) error
 }
 
 type articlesHandler struct {
@@ -257,4 +259,17 @@ func (h *articlesHandler) UnfavoriteArticle(c *fiber.Ctx) error {
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, article).Res()
 
+}
+
+func (h *articlesHandler) GetTagsList(c *fiber.Ctx) error {
+	tagsList, err := h.articlesUsecase.GetTagsList()
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(getArticlesErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, tagsList).Res()
 }

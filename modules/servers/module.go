@@ -27,6 +27,7 @@ type IModulefactory interface {
 	ProfileModule()
 	ArticleModule()
 	CommentModule()
+	TagModule()
 }
 
 type moduleFactory struct {
@@ -110,4 +111,12 @@ func (m *moduleFactory) CommentModule() {
 	router.Post("/comments", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.InsertComment)
 	router.Delete("/comments/:id", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteComment)
 
+}
+
+func (m *moduleFactory) TagModule() {
+	repository := articlesrepositories.ArticlesRepository(m.server.db)
+	usecase := articlesusecases.ArticlesUsecase(m.server.cfg, repository)
+	handler := articleshandlers.ArticlesHandler(m.server.cfg, usecase)
+
+	m.router.Get("/tags", handler.GetTagsList)
 }

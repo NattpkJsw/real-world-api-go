@@ -15,6 +15,7 @@ type IArticlesUsecase interface {
 	DeleteArticle(slug string, userID int) error
 	FavoriteArticle(slug string, userID int) (*articles.Article, error)
 	UnfavoriteArticle(slug string, userID int) (*articles.Article, error)
+	GetTagsList() ([]string, error)
 }
 
 type articlesUsecase struct {
@@ -104,4 +105,8 @@ func (u *articlesUsecase) UnfavoriteArticle(slug string, userID int) (*articles.
 		return nil, err
 	}
 	return u.articlesRepository.UnfavoriteArticle(userID, articleID)
+}
+
+func (u *articlesUsecase) GetTagsList() ([]string, error) {
+	return u.articlesRepository.GetTagsList()
 }
