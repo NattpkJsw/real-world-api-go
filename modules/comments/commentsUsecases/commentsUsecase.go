@@ -10,6 +10,7 @@ import (
 type ICommentUsecase interface {
 	FindComments(slug string, userID int) ([]*comments.Comment, error)
 	InsertComment(slug string, req *comments.CommentCredential) (*comments.Comment, error)
+	DeleteComment(commentID, userID int) error
 }
 
 type commentUsecase struct {
@@ -41,4 +42,9 @@ func (u *commentUsecase) InsertComment(slug string, req *comments.CommentCredent
 	}
 	req.ArticleID = articleID
 	return u.commentRepository.InsertComment(req)
+}
+
+func (u *commentUsecase) DeleteComment(commentID, userID int) error {
+	return u.commentRepository.DeleteComment(commentID, userID)
+
 }

@@ -2,6 +2,7 @@ package commentshandlers
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/NattpkJsw/real-world-api-go/config"
@@ -16,11 +17,13 @@ type commentsHandlersErrCode string
 const (
 	findCommentsErr   commentsHandlersErrCode = "comment-001"
 	insertCommentsErr commentsHandlersErrCode = "comment-002"
+	deleteCommentsErr commentsHandlersErrCode = "comment-003"
 )
 
 type ICommentsHandler interface {
 	FindComments(c *fiber.Ctx) error
 	InsertComment(c *fiber.Ctx) error
+	DeleteComment(c *fiber.Ctx) error
 }
 
 type commentsHandler struct {
@@ -93,4 +96,35 @@ func (h *commentsHandler) InsertComment(c *fiber.Ctx) error {
 
 	return entities.NewResponse(c).Success(fiber.StatusCreated, comment).Res()
 
+}
+
+func (h *commentsHandler) DeleteComment(c *fiber.Ctx) error {
+	userID := c.Locals("userId").(int)
+	pathVariable := strings.Trim(c.Params("id"), " ")
+	id, err := url.QueryUnescape(pathVariable)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(findCommentsErr),
+			err.Error(),
+		).Res()
+	}
+	commentID, err := strconv.Atoi(id)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(deleteCommentsErr),
+			err.Error(),
+		).Res()
+	}
+
+	if err := h.commentsUsecase.DeleteComment(commentID, userID); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(deleteCommentsErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusNoContent, nil).Res()
 }

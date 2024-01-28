@@ -105,5 +105,6 @@ func (m *moduleFactory) CommentModule() {
 	router := m.router.Group("/articles/:slug")
 	router.Get("/comments", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.FindComments)
 	router.Post("/comments", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.InsertComment)
+	router.Delete("/comments/:id", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteComment)
 
 }

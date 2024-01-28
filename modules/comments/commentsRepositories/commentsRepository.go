@@ -13,6 +13,7 @@ import (
 type ICommentsRepository interface {
 	FindComments(aritcleID, userID int) ([]*comments.Comment, error)
 	InsertComment(req *comments.CommentCredential) (*comments.Comment, error)
+	DeleteComment(commentID, userID int) error
 }
 
 type commentRepository struct {
@@ -138,4 +139,27 @@ func (r *commentRepository) InsertComment(req *comments.CommentCredential) (*com
 	}
 
 	return r.FindSingleComment(commentID, req.AuthorID)
+}
+
+func (r *commentRepository) DeleteComment(commentID, userID int) error {
+	query := `
+	DELETE
+	FROM "comments"
+	WHERE "id" = $1 AND "author_id" = $2`
+
+	result, err := r.db.ExecContext(context.Background(), query, commentID, userID)
+	if err != nil {
+		return fmt.Errorf("delete comment failed: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("getting number of affected rows failed: %v", err)
+	}
+	fmt.Println("rowsAffected=== ", rowsAffected)
+	if rowsAffected == 0 {
+		return fmt.Errorf("comment with ID %d and author ID %d does not exist", commentID, userID)
+	}
+
+	return nil
 }
