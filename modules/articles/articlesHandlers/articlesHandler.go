@@ -14,12 +14,14 @@ import (
 type articlesHandlersErrCode string
 
 const (
-	getSingleArticleErr articlesHandlersErrCode = "article-001"
-	getArticlesErr      articlesHandlersErrCode = "article-002"
-	getArticlesFeedErr  articlesHandlersErrCode = "article-003"
-	createArticleErr    articlesHandlersErrCode = "article-004"
-	updateArticleErr    articlesHandlersErrCode = "article-005"
-	deleteArticleErr    articlesHandlersErrCode = "article-006"
+	getSingleArticleErr  articlesHandlersErrCode = "article-001"
+	getArticlesErr       articlesHandlersErrCode = "article-002"
+	getArticlesFeedErr   articlesHandlersErrCode = "article-003"
+	createArticleErr     articlesHandlersErrCode = "article-004"
+	updateArticleErr     articlesHandlersErrCode = "article-005"
+	deleteArticleErr     articlesHandlersErrCode = "article-006"
+	favoriteArticleErr   articlesHandlersErrCode = "article-007"
+	unfavoriteArticleErr articlesHandlersErrCode = "article-008"
 )
 
 type IArticleshandler interface {
@@ -29,6 +31,8 @@ type IArticleshandler interface {
 	CreateArticle(c *fiber.Ctx) error
 	UpdateArticle(c *fiber.Ctx) error
 	DeleteArticle(c *fiber.Ctx) error
+	FavoriteArticle(c *fiber.Ctx) error
+	UnfavoriteArticle(c *fiber.Ctx) error
 }
 
 type articlesHandler struct {
@@ -204,4 +208,53 @@ func (h *articlesHandler) DeleteArticle(c *fiber.Ctx) error {
 		).Res()
 	}
 	return entities.NewResponse(c).Success(fiber.StatusNoContent, nil).Res()
+}
+
+func (h *articlesHandler) FavoriteArticle(c *fiber.Ctx) error {
+	userID := c.Locals("userId").(int)
+	pathVariable := strings.Trim(c.Params("slug"), " ")
+	slug, err := url.QueryUnescape(pathVariable)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(favoriteArticleErr),
+			err.Error(),
+		).Res()
+	}
+
+	article, err := h.articlesUsecase.FavoriteArticle(slug, userID)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(favoriteArticleErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusCreated, article).Res()
+}
+
+func (h *articlesHandler) UnfavoriteArticle(c *fiber.Ctx) error {
+	userID := c.Locals("userId").(int)
+	pathVariable := strings.Trim(c.Params("slug"), " ")
+	slug, err := url.QueryUnescape(pathVariable)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(unfavoriteArticleErr),
+			err.Error(),
+		).Res()
+	}
+
+	article, err := h.articlesUsecase.UnfavoriteArticle(slug, userID)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(unfavoriteArticleErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, article).Res()
+
 }

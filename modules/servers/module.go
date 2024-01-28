@@ -94,6 +94,9 @@ func (m *moduleFactory) ArticleModule() {
 	router.Put("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateArticle)
 	router.Delete("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteArticle)
 
+	router.Post("/:slug/favorite", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.FavoriteArticle)
+	router.Delete("/:slug/favorite", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UnfavoriteArticle)
+
 }
 
 func (m *moduleFactory) CommentModule() {

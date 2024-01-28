@@ -13,6 +13,8 @@ type IArticlesUsecase interface {
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
 	DeleteArticle(slug string, userID int) error
+	FavoriteArticle(slug string, userID int) (*articles.Article, error)
+	UnfavoriteArticle(slug string, userID int) (*articles.Article, error)
 }
 
 type articlesUsecase struct {
@@ -86,4 +88,20 @@ func (u *articlesUsecase) DeleteArticle(slug string, userID int) error {
 		return err
 	}
 	return u.articlesRepository.DeleteArticle(artcleID, userID)
+}
+
+func (u *articlesUsecase) FavoriteArticle(slug string, userID int) (*articles.Article, error) {
+	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+	return u.articlesRepository.FavoriteArticle(userID, articleID)
+}
+
+func (u *articlesUsecase) UnfavoriteArticle(slug string, userID int) (*articles.Article, error) {
+	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+	return u.articlesRepository.UnfavoriteArticle(userID, articleID)
 }

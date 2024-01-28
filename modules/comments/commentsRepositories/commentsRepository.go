@@ -133,7 +133,6 @@ func (r *commentRepository) InsertComment(req *comments.CommentCredential) (*com
 	($1, $2, $3)
 	RETURNING "id";`
 
-	fmt.Println("body === ", req.Body)
 	if err := r.db.QueryRowxContext(ctx, query, req.Body, req.ArticleID, req.AuthorID).Scan(&commentID); err != nil {
 		return nil, fmt.Errorf("insert comment failed: %v", err)
 	}
@@ -156,7 +155,7 @@ func (r *commentRepository) DeleteComment(commentID, userID int) error {
 	if err != nil {
 		return fmt.Errorf("getting number of affected rows failed: %v", err)
 	}
-	fmt.Println("rowsAffected=== ", rowsAffected)
+
 	if rowsAffected == 0 {
 		return fmt.Errorf("comment with ID %d and author ID %d does not exist", commentID, userID)
 	}

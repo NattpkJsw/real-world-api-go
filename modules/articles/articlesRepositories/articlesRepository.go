@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/NattpkJsw/real-world-api-go/modules/articles"
 	articlespatterns "github.com/NattpkJsw/real-world-api-go/modules/articles/articlesPatterns"
@@ -17,6 +18,8 @@ type IArticlesRepository interface {
 	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
 	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
 	DeleteArticle(articleID, userID int) error
+	FavoriteArticle(userID, articleID int) (*articles.Article, error)
+	UnfavoriteArticle(userID, articleID int) (*articles.Article, error)
 }
 
 type articlesRepository struct {
@@ -174,8 +177,76 @@ func (r *articlesRepository) DeleteArticle(articleID, userID int) error {
 	FROM "articles"
 	WHERE "id" = $1 AND "author_id" = $2;`
 
-	if _, err := r.db.ExecContext(context.Background(), query, articleID, userID); err != nil {
+	result, err := r.db.ExecContext(context.Background(), query, articleID, userID)
+	if err != nil {
 		return fmt.Errorf("delete article failed: %v", err)
 	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("getting number of affected rows failed: %v", err)
+	}
+
+	if rowAffected == 0 {
+		return fmt.Errorf("the article doesn't exist")
+	}
+
 	return nil
+}
+
+func (r *articlesRepository) FavoriteArticle(userID, articleID int) (*articles.Article, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `
+	INSERT INTO "article_favorites"(
+		"user_id",
+		"article_id"
+	)
+	SELECT
+		$1,$2
+	WHERE NOT EXISTS(
+		SELECT 1
+		FROM "article_favorites"
+		WHERE "user_id" = $1 AND "article_id" = $2
+	)
+	`
+	result, err := r.db.ExecContext(ctx, query, userID, articleID)
+	if err != nil {
+		return nil, fmt.Errorf("add favorite failed: %v", err)
+	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("getting number of affected rows failed: %v", err)
+	}
+
+	if rowAffected == 0 {
+		return nil, fmt.Errorf("the favorite already exist")
+	}
+
+	return r.GetSingleArticle(articleID, userID)
+}
+
+func (r *articlesRepository) UnfavoriteArticle(userID, articleID int) (*articles.Article, error) {
+	query := `
+	DELETE
+	FROM "article_favorites"
+	WHERE "user_id" = $1 AND "article_id" = $2;`
+
+	result, err := r.db.ExecContext(context.Background(), query, userID, articleID)
+	if err != nil {
+		return nil, fmt.Errorf("unfavorite article failed:%v", err)
+	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("getting number of affected rows failed: %v", err)
+	}
+
+	if rowAffected == 0 {
+		return nil, fmt.Errorf("already unfavorite article")
+	}
+
+	return r.GetSingleArticle(articleID, userID)
 }
