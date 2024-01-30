@@ -42,7 +42,8 @@ func UsersHandler(cfg config.IConfig, usersUsecase usersUsecases.IUsersUsecase) 
 
 func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	// Request body parser
-	req := new(users.UserRegisterReq)
+	req := &users.RegisterReq{}
+
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -52,7 +53,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	}
 
 	// Email validation
-	if !req.IsEmail() {
+	if !req.User.IsEmail() {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
 			string(signUpErr),
@@ -61,7 +62,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	}
 
 	// Insert
-	result, err := h.usersUsecase.InsertCustomer(req)
+	result, err := h.usersUsecase.InsertCustomer(&req.User)
 	if err != nil {
 		switch err.Error() {
 		case "username has been used":
@@ -88,7 +89,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 }
 
 func (h *usersHandler) SignIn(c *fiber.Ctx) error {
-	req := new(users.UserCredential)
+	req := new(users.UserSignin)
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -97,7 +98,7 @@ func (h *usersHandler) SignIn(c *fiber.Ctx) error {
 		).Res()
 	}
 
-	passport, err := h.usersUsecase.GetPassport(req)
+	passport, err := h.usersUsecase.GetPassport(&req.User)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,

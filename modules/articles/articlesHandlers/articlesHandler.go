@@ -1,6 +1,7 @@
 package articleshandlers
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -52,6 +53,7 @@ func ArticlesHandler(cfg config.IConfig, articlesUsecase articlesusecases.IArtic
 func (h *articlesHandler) GetSingleArticle(c *fiber.Ctx) error {
 	pathVariable := strings.Trim(c.Params("slug"), " ")
 	slug, err := url.QueryUnescape(pathVariable)
+	fmt.Println("pass herer")
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -110,7 +112,7 @@ func (h *articlesHandler) GetArticlesFeed(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
-			string(getArticlesErr),
+			string(getArticlesFeedErr),
 			err.Error(),
 		).Res()
 	}
@@ -121,12 +123,12 @@ func (h *articlesHandler) GetArticlesFeed(c *fiber.Ctx) error {
 	if req.Offset <= 0 {
 		req.Offset = 0
 	}
-
 	articlesOut, err := h.articlesUsecase.GetArticlesFeed(req, userId)
+
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
-			string(getArticlesErr),
+			string(getArticlesFeedErr),
 			err.Error(),
 		).Res()
 	}
@@ -164,7 +166,7 @@ func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
-			string(getSingleArticleErr),
+			string(updateArticleErr),
 			err.Error(),
 		).Res()
 	}

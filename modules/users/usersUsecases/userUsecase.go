@@ -12,8 +12,7 @@ import (
 
 type IUsersUsecase interface {
 	InsertCustomer(req *users.UserRegisterReq) (*users.User, error)
-	GetPassport(req *users.UserCredential) (*users.UserPassport, error)
-	// RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error)
+	GetPassport(req *users.UserCredential) (*users.ResponsePassport, error)
 	DeleteOauth(accessToken string) error
 	GetUserProfile(userId int) (*users.User, error)
 	UpdateUser(user *users.UserCredentialCheck) (*users.User, error)
@@ -45,7 +44,7 @@ func (u *usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.User, 
 	return result, nil
 }
 
-func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPassport, error) {
+func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.ResponsePassport, error) {
 	//Find user
 	user, err := u.usersRepository.FindOneUserByEmail(req.Email)
 	if err != nil {
@@ -77,14 +76,17 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspo
 
 	//Set passport
 	passport := &users.UserPassport{
-		Id:       user.Id,
+		// Id:       user.Id,
 		Email:    user.Email,
 		Username: user.Username,
 		Image:    user.Image,
 		Bio:      user.Bio,
 		Token:    userToken.AccessToken,
 	}
-	return passport, nil
+	passportOutput := &users.ResponsePassport{
+		User: *passport,
+	}
+	return passportOutput, nil
 }
 
 func (u *usersUsecase) DeleteOauth(accessToken string) error {
@@ -109,63 +111,3 @@ func (u *usersUsecase) UpdateUser(user *users.UserCredentialCheck) (*users.User,
 	}
 	return updatedUser, nil
 }
-
-// func (u *usersUsecase) RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error) {
-// 	// Parse token
-// 	claims, err := auth.ParseToken(u.cfg.Jwt(), req.RefreshToken)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	oauth, err := u.usersRepository.FindOneOauth(req.RefreshToken)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Find profile
-// 	profile, err := u.usersRepository.GetProfile(oauth.UserId)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	newClaims := &users.UserClaims{
-// 		Id: profile.Id,
-// 	}
-
-// 	accessToken, err := auth.NewAuth(
-// 		auth.Access,
-// 		u.cfg.Jwt(),
-// 		newClaims,
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	refreshToken := auth.RepeatToken(
-// 		u.cfg.Jwt(),
-// 		newClaims,
-// 		claims.ExpiresAt.Unix(),
-// 	)
-
-// 	// set user token
-// 	userToken := &users.UserToken{
-// 		User_Id:      profile.Id,
-// 		AccessToken:  accessToken.SignToken(),
-// 		RefreshToken: refreshToken,
-// 	}
-// 	if err := u.usersRepository.InsertOauth(userToken); err != nil {
-// 		return nil, err
-// 	}
-
-// 	//Set passport
-// 	passport := &users.UserPassport{
-// 		Id:       profile.Id,
-// 		Email:    profile.Email,
-// 		Username: profile.Username,
-// 		Image:    profile.Image,
-// 		Bio:      profile.Bio,
-// 		Token:    userToken.AccessToken,
-// 	}
-
-// 	return passport, nil
-// }

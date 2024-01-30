@@ -20,7 +20,7 @@ type IArticlesRepository interface {
 	DeleteArticle(articleID, userID int) error
 	FavoriteArticle(userID, articleID int) (*articles.Article, error)
 	UnfavoriteArticle(userID, articleID int) (*articles.Article, error)
-	GetTagsList() ([]string, error)
+	GetTagsList() (*articles.TagList, error)
 }
 
 type articlesRepository struct {
@@ -252,14 +252,14 @@ func (r *articlesRepository) UnfavoriteArticle(userID, articleID int) (*articles
 	return r.GetSingleArticle(articleID, userID)
 }
 
-func (r *articlesRepository) GetTagsList() ([]string, error) {
+func (r *articlesRepository) GetTagsList() (*articles.TagList, error) {
 	query := `
 		SELECT
-		array_to_json(array_agg("t"."name"))
+		json_build_object('tags',array_to_json(array_agg("t"."name")))
 		FROM "tags" "t";`
 
 	var bytes string
-	var tagsResult []string
+	tagsResult := new(articles.TagList)
 	if err := r.db.Get(&bytes, query); err != nil {
 		return nil, fmt.Errorf("get tags list failed: %v", err)
 	}

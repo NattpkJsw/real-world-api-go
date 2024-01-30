@@ -21,7 +21,7 @@ type Author struct {
 }
 
 type ArticleList struct {
-	Article       []*Article `json:"article"`
+	Article       []*Article `json:"articles"`
 	ArticlesCount int        `json:"articlesCount"`
 }
 
@@ -46,4 +46,8 @@ type ArticleCredential struct {
 	Body        string    `json:"body"`
 	TagList     []*string `json:"tagList"`
 	Slug        string    `json:"slug"`
+}
+
+type TagList struct {
+	Tags []string `json:"tags"`
 }

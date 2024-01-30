@@ -62,8 +62,8 @@ func (m *moduleFactory) UsersModule() {
 	handler := usershandlers.UsersHandler(m.server.cfg, usecase)
 
 	router := m.router.Group("/users")
-	router.Post("/signup", handler.SignUpCustomer)
-	router.Post("/signin", handler.SignIn)
+	router.Post("/", handler.SignUpCustomer)
+	router.Post("/login", handler.SignIn)
 	router.Get("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.GetUserProfile)
 	router.Post("/signout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.SignOut)
 	router.Put("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateUser)
@@ -88,9 +88,9 @@ func (m *moduleFactory) ArticleModule() {
 	handler := articleshandlers.ArticlesHandler(m.server.cfg, usecase)
 
 	router := m.router.Group("/articles")
-	router.Get("/:slug", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetSingleArticle)
 	router.Get("/", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesList)
-	router.Get("/feed", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetArticlesFeed)
+	router.Get("/feed/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.GetArticlesFeed)
+	router.Get("/:slug", m.middle.JwtAuth(string(middlewares.ReadLevel)), handler.GetSingleArticle)
 	router.Post("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.CreateArticle)
 	router.Put("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateArticle)
 	router.Delete("/:slug", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.DeleteArticle)

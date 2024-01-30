@@ -21,8 +21,16 @@ type UserRegisterReq struct {
 	Password string `db:"password" json:"password"`
 }
 
+type RegisterReq struct {
+	User UserRegisterReq `json:"user"`
+}
+
+type ResponsePassport struct {
+	User UserPassport `json:"user"`
+}
+
 type UserPassport struct {
-	Id       int     `db:"id" json:"id"`
+	// Id       int     `db:"id" json:"id"`
 	Email    string  `db:"email" json:"email"`
 	Username string  `db:"username" json:"username"`
 	Image    *string `db:"image" json:"image"`
@@ -40,6 +48,10 @@ type UserToken struct {
 type UserCredential struct {
 	Email    string `db:"email" json:"email" form:"email"`
 	Password string `db:"password" json:"password" form:"password"`
+}
+
+type UserSignin struct {
+	User UserCredential `json:"user"`
 }
 
 type UserCredentialCheck struct {
