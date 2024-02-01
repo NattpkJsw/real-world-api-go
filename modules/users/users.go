@@ -15,6 +15,17 @@ type User struct {
 	Bio      *string `db:"bio" json:"bio"`
 }
 
+type Profile struct {
+	Username  string  `json:"username"`
+	Image     *string `json:"image"`
+	Bio       *string `json:"bio"`
+	Following bool    `json:"following"`
+}
+
+type UserProfile struct {
+	Profile *Profile `json:"profile"`
+}
+
 type UserRegisterReq struct {
 	Username string `db:"username" json:"username"`
 	Email    string `db:"email" json:"email"`
@@ -22,7 +33,7 @@ type UserRegisterReq struct {
 }
 
 type RegisterReq struct {
-	User UserRegisterReq `json:"user"`
+	User *UserRegisterReq `json:"user"`
 }
 
 type ResponsePassport struct {
@@ -39,10 +50,9 @@ type UserPassport struct {
 }
 
 type UserToken struct {
-	Id           string `db:"id" json:"id"`
-	User_Id      int    `db:"user_id" json:"user_id"`
-	AccessToken  string `db:"access_token" json:"access_token"`
-	RefreshToken string `db:"refresh_token" json:"refresh_token"`
+	Id          string `db:"id" json:"id"`
+	User_Id     int    `db:"user_id" json:"user_id"`
+	AccessToken string `db:"access_token" json:"access_token"`
 }
 
 type UserCredential struct {
@@ -54,25 +64,31 @@ type UserSignin struct {
 	User UserCredential `json:"user"`
 }
 
+type UserCredentialInput struct {
+	User UserCredentialCheck `json:"user"`
+}
+
 type UserCredentialCheck struct {
-	Id       int     `db:"id"`
-	Email    string  `db:"email"`
-	Password string  `db:"password"`
-	Username string  `db:"username"`
-	Image    *string `db:"image"`
-	Bio      *string `db:"bio"`
+	Id          int     `json:"id" db:"id"`
+	Email       string  `json:"email" db:"email"`
+	Password    string  `json:"password" db:"password"`
+	Username    string  `json:"username" db:"username"`
+	Image       *string `json:"image" db:"image"`
+	Bio         *string `json:"bio" db:"bio"`
+	AccessToken string  `json:"access_token"`
 }
 
 type UserClaims struct {
 	Id int `db:"id" json:"id"`
 }
 
-type UserRefreshCredential struct {
-	RefreshToken string `json:"refresh_token" form:"refresh_token"`
+type OauthToken struct {
+	AccessToken string `json:"access_token" form:"access_token"`
 }
 
 type Oauth struct {
-	AccessToken string `json:"access_token" form:"access_token"`
+	Id     string `db:"id" json:"id"`
+	UserId int    `db:"user_id" json:"user_id"`
 }
 
 // type UserRemoveCredential struct {

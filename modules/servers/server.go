@@ -52,6 +52,7 @@ func (s *server) Start() {
 	modules.ArticleModule()
 	modules.CommentModule()
 	modules.TagModule()
+	modules.UserModule()
 
 	s.app.Use(middlewares.RouterCheck())
 

@@ -33,8 +33,8 @@ func (r *commentRepository) FindComments(aritcleID, userID int) ([]*comments.Com
 	FROM (
 		SELECT
 			"c"."id",
-			"c"."created_at",
-			"c"."updated_at",
+			"c"."createdat",
+			"c"."updatedat",
 			"c"."body",
 			(
 				SELECT 
@@ -80,8 +80,8 @@ func (r *commentRepository) FindSingleComment(commentID, userID int) (*comments.
 	(
 		SELECT
 			"id",
-			"created_at",
-			"updated_at",
+			"createdat",
+			"updatedat",
 			"body",
 			(
 				SELECT 

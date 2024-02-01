@@ -87,8 +87,8 @@ func (b *findArticleBuilder) initQuery() {
 			JOIN "tags" AS "t" ON "at"."tag_id" = "t"."id"
 			WHERE "a"."id" = "at"."article_id"
 		) AS "taglist",
-		"a"."created_at",
-		"a"."updated_at",
+		"a"."createdat",
+		"a"."updatedat",
 		(
 			SELECT
 			CASE WHEN EXISTS(
@@ -170,6 +170,15 @@ func (b *findArticleBuilder) whereQuery() {
 		queryWhere += strings.Replace(queryWhereStack[i], "?", "$"+strconv.Itoa(i+2), 1)
 	}
 
+	if b.req.IsFeed {
+		queryWhere += ` 
+		AND EXISTS (
+			SELECT 1
+			FROM "user_follows" "uf"
+			WHERE "a"."author_id" = "uf"."following_id" AND "uf"."follower_id" = $1
+		)`
+	}
+
 	b.lastStackIndex = len(b.values)
 	b.query += queryWhere
 
@@ -177,7 +186,7 @@ func (b *findArticleBuilder) whereQuery() {
 
 func (b *findArticleBuilder) sort() { // sort
 	b.query += ` 
-	ORDER BY "a"."created_at" DESC`
+	ORDER BY "a"."createdat" DESC`
 	//  set offset and limit
 	b.values = append(b.values, b.req.Offset)
 	b.values = append(b.values, b.req.Limit)

@@ -2,8 +2,8 @@ package comments
 
 type Comment struct {
 	Id        int                    `json:"id" db:"id"`
-	CreatedAt string                 `json:"created_at" db:"created_at"`
-	UpdatedAt string                 `json:"updated_at" db:"updated_at"`
+	CreatedAt string                 `json:"createdAt" db:"createdat"`
+	UpdatedAt string                 `json:"updatedAt" db:"updatedat"`
 	Body      string                 `json:"body" db:"body"`
 	Author    map[string]interface{} `json:"author"`
 }

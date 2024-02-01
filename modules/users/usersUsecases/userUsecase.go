@@ -11,11 +11,11 @@ import (
 )
 
 type IUsersUsecase interface {
-	InsertCustomer(req *users.UserRegisterReq) (*users.User, error)
+	InsertCustomer(req *users.UserRegisterReq) (*users.ResponsePassport, error)
 	GetPassport(req *users.UserCredential) (*users.ResponsePassport, error)
 	DeleteOauth(accessToken string) error
-	GetUserProfile(userId int) (*users.User, error)
-	UpdateUser(user *users.UserCredentialCheck) (*users.User, error)
+	GetUser(token string) (*users.ResponsePassport, error)
+	UpdateUser(user *users.UserCredentialCheck) (*users.ResponsePassport, error)
 }
 
 type usersUsecase struct {
@@ -30,18 +30,25 @@ func UsersUsecase(cfg config.IConfig, usersRepository usersRepositories.IUsersRe
 	}
 }
 
-func (u *usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.User, error) {
+func (u *usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.ResponsePassport, error) {
+	password := req.Password
 	if err := req.BcryptHashing(); err != nil {
 		return nil, err
 	}
 
 	// Insert user
-	result, err := u.usersRepository.InsertUser(req)
+	_, err := u.usersRepository.InsertUser(req)
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	loginUser := &users.UserCredential{
+		Email:    req.Email,
+		Password: password,
+	}
+
+	return u.GetPassport(loginUser)
+
 }
 
 func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.ResponsePassport, error) {
@@ -55,20 +62,17 @@ func (u *usersUsecase) GetPassport(req *users.UserCredential) (*users.ResponsePa
 		return nil, fmt.Errorf("password is invalid")
 	}
 	// sign token
-	accessToken, _ := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
+	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
 		Id: user.Id,
 	})
-
-	// refresh token
-	refreshToken, _ := auth.NewAuth(auth.Refresh, u.cfg.Jwt(), &users.UserClaims{
-		Id: user.Id,
-	})
+	if err != nil {
+		return nil, err
+	}
 
 	// set user token
 	userToken := &users.UserToken{
-		User_Id:      user.Id,
-		AccessToken:  accessToken.SignToken(),
-		RefreshToken: refreshToken.SignToken(),
+		User_Id:     user.Id,
+		AccessToken: accessToken.SignToken(),
 	}
 	if err := u.usersRepository.InsertOauth(userToken); err != nil {
 		return nil, err
@@ -96,18 +100,85 @@ func (u *usersUsecase) DeleteOauth(accessToken string) error {
 	return nil
 }
 
-func (u *usersUsecase) GetUserProfile(userId int) (*users.User, error) {
-	profile, err := u.usersRepository.GetProfile(userId)
+func (u *usersUsecase) GetUser(token string) (*users.ResponsePassport, error) {
+
+	oauth, err := u.usersRepository.FindOneOath(token)
 	if err != nil {
 		return nil, err
 	}
-	return profile, nil
+
+	profile, err := u.usersRepository.GetProfile(oauth.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
+		Id: profile.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	passport := &users.UserToken{
+		Id:          oauth.Id,
+		User_Id:     oauth.UserId,
+		AccessToken: accessToken.SignToken(),
+	}
+
+	if err := u.usersRepository.UpdateOauth(passport); err != nil {
+		return nil, err
+	}
+
+	userPassport := &users.UserPassport{
+		Email:    profile.Email,
+		Username: profile.Username,
+		Image:    profile.Image,
+		Bio:      profile.Bio,
+		Token:    passport.AccessToken,
+	}
+
+	resPassport := &users.ResponsePassport{
+		User: *userPassport,
+	}
+
+	return resPassport, nil
 }
 
-func (u *usersUsecase) UpdateUser(user *users.UserCredentialCheck) (*users.User, error) {
+func (u *usersUsecase) UpdateUser(user *users.UserCredentialCheck) (*users.ResponsePassport, error) {
 	updatedUser, err := u.usersRepository.UpdateUser(user)
 	if err != nil {
 		return nil, err
 	}
-	return updatedUser, nil
+
+	oauthID, err := u.usersRepository.FindOneOath(user.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
+		Id: user.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	passport := &users.UserToken{
+		Id:          oauthID.Id,
+		User_Id:     oauthID.UserId,
+		AccessToken: accessToken.SignToken(),
+	}
+
+	if err := u.usersRepository.UpdateOauth(passport); err != nil {
+		return nil, err
+	}
+
+	userOut := &users.UserPassport{
+		Email:    updatedUser.Email,
+		Username: updatedUser.Username,
+		Image:    updatedUser.Image,
+		Bio:      updatedUser.Bio,
+		Token:    passport.AccessToken,
+	}
+	userRes := &users.ResponsePassport{
+		User: *userOut,
+	}
+	return userRes, nil
 }

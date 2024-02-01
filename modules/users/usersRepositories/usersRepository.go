@@ -3,6 +3,7 @@ package usersrepositories
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NattpkJsw/real-world-api-go/modules/users"
@@ -14,8 +15,8 @@ type IUsersRepository interface {
 	InsertUser(req *users.UserRegisterReq) (*users.User, error)
 	FindOneUserByEmail(email string) (*users.UserCredentialCheck, error)
 	InsertOauth(req *users.UserToken) error
-	// FindOneOauth(refreshToken string) (*users.Oauth, error)
-	// UpdateOauth(req *users.UserToken) error
+	FindOneOath(accessToken string) (*users.Oauth, error)
+	UpdateOauth(req *users.UserToken) error
 	GetProfile(userId int) (*users.User, error)
 	DeleteOauth(accessToken string) error
 	UpdateUser(user *users.UserCredentialCheck) (*users.User, error)
@@ -62,7 +63,7 @@ func (r *usersRepository) FindOneUserByEmail(email string) (*users.UserCredentia
 	WHERE "email" = $1;`
 
 	user := new(users.UserCredentialCheck)
-	if err := r.db.Get(user, query, email); err != nil {
+	if err := r.db.Get(user, query, strings.ToLower(email)); err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
 	return user, nil
@@ -75,17 +76,15 @@ func (r *usersRepository) InsertOauth(req *users.UserToken) error {
 	query := `
 	INSERT INTO "oauth" (
 		"user_id",
-		"refresh_token",
 		"access_token"
 	)
-	VALUES ($1, $2, $3)
+	VALUES ($1, $2)
 		RETURNING "id";`
 
 	if err := r.db.QueryRowContext(
 		ctx,
 		query,
 		req.User_Id,
-		req.RefreshToken,
 		req.AccessToken,
 	).Scan(&req.Id); err != nil {
 		return fmt.Errorf("insert oauth failed: %v", err)
@@ -101,35 +100,6 @@ func (r *usersRepository) DeleteOauth(accessToken string) error {
 	}
 	return nil
 }
-
-// func (r *usersRepository) FindOneOauth(refreshToken string) (*users.Oauth, error) {
-// 	query := `
-// 	SELECT
-// 		"id",
-// 		"user_id"
-// 	FROM "oauth"
-// 	WHERE "refresh_token" = $1;`
-
-// 	oauth := new(users.Oauth)
-// 	if err := r.db.Get(oauth, query, refreshToken); err != nil {
-// 		return nil, fmt.Errorf("oauth not found")
-// 	}
-// 	return oauth, nil
-// }
-
-// func (r *usersRepository) UpdateOauth(req *users.UserToken) error {
-// 	query := `
-// 	UPDATE "oauth" SET
-// 		"access_token" = :access_token,
-// 		"refresh_token" = :refresh_token
-// 	WHERE "id" = :id;`
-
-// 	if _, err := r.db.NamedExecContext(context.Background(), query, req); err != nil {
-// 		return fmt.Errorf("update oauth failed: %v", err)
-// 	}
-
-// 	return nil
-// }
 
 func (r *usersRepository) GetProfile(userId int) (*users.User, error) {
 	query := `
@@ -151,47 +121,87 @@ func (r *usersRepository) GetProfile(userId int) (*users.User, error) {
 
 func (r *usersRepository) UpdateUser(user *users.UserCredentialCheck) (*users.User, error) {
 	// Build the update query dynamically
+	query, params, err := buildUpdateQuery(user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute the query
+	if _, err := r.db.NamedExec(query, params); err != nil {
+		return nil, fmt.Errorf("update user failed: %v", err)
+	}
+
+	return r.GetProfile(user.Id)
+}
+
+func buildUpdateQuery(user *users.UserCredentialCheck) (string, map[string]interface{}, error) {
+	// ... (same as your original code)
 	query := `UPDATE "users" SET`
 	params := make(map[string]any)
 	params["id"] = user.Id
 
 	if user.Username != "" {
-		query += " username = :username,"
+		query += ` 
+		"username" = :username,`
 		params["username"] = user.Username
 	}
 
 	if user.Email != "" {
-		query += " email = :email,"
+		query += ` 
+		"email" = :email,`
 		params["email"] = user.Email
 	}
 
-	if *user.Bio != "" {
-		query += " bio = :bio,"
+	if user.Bio != nil {
+		query += ` 
+		"bio" = :bio,`
 		params["bio"] = user.Bio
 	}
 
-	if *user.Image != "" {
-		query += " image = :image,"
+	if user.Image != nil {
+		query += ` 
+		"image" = :image,`
 		params["image"] = user.Image
 	}
 
 	if user.Password != "" {
 		if err := user.BcryptHashingUpdate(); err != nil {
-			return nil, err
+			return "", nil, fmt.Errorf("hash password failed: %v", err)
 		}
-		query += " password = :password,"
+		query += ` "password" = :password,`
 		params["password"] = user.Password
 	}
-
 	// Remove the trailing comma
 	query = query[:len(query)-1]
-	query += " WHERE id = :id"
+	query += ` 
+	WHERE "id" = :id;`
 
-	// Execute the query
+	return query, params, nil
+}
 
-	if _, err := r.db.NamedExec(query, params); err != nil {
-		return nil, err
+func (r *usersRepository) UpdateOauth(req *users.UserToken) error {
+	query := `
+	UPDATE "oauth" SET
+		"access_token" = :access_token
+	WHERE "id" = :id;`
+
+	if _, err := r.db.NamedExecContext(context.Background(), query, req); err != nil {
+		return fmt.Errorf("update oauth failed: %v", err)
 	}
+	return nil
+}
 
-	return r.GetProfile(user.Id)
+func (r *usersRepository) FindOneOath(accessToken string) (*users.Oauth, error) {
+	query := `
+	SELECT
+		"id",
+		"user_id"
+	FROM "oauth"
+	WHERE "access_token" = $1;`
+
+	oauth := new(users.Oauth)
+	if err := r.db.Get(oauth, query, accessToken); err != nil {
+		return nil, fmt.Errorf("oauth not found, %v", err)
+	}
+	return oauth, nil
 }

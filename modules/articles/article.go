@@ -6,8 +6,8 @@ type Article struct {
 	Description    *string   `json:"description"`
 	Body           *string   `json:"body"`
 	TagList        *[]string `json:"taglist"`
-	CreatedAt      *string   `json:"created_at"`
-	UpdatedAt      *string   `json:"updated_at"`
+	CreatedAt      *string   `json:"createdAt"`
+	UpdatedAt      *string   `json:"updatedAt"`
 	Favorited      *bool     `json:"favorited"`
 	FavoritesCount *int      `json:"favoritesCount"`
 	Author         *Author   `json:"author"`
@@ -31,6 +31,7 @@ type ArticleFilter struct {
 	Favorited string `query:"favorited"`
 	Limit     int    `query:"limit"`
 	Offset    int    `query:"offset"`
+	IsFeed    bool   `query:"isfeed"`
 }
 
 type ArticleFeedFilter struct {

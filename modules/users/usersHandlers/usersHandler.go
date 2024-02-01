@@ -15,16 +15,16 @@ const (
 	signInErr          userHandlersErrCode = "users-002"
 	refreshPassportErr userHandlersErrCode = "users-003"
 	signOutErr         userHandlersErrCode = "users-004"
-	getUserProfileErr  userHandlersErrCode = "users-005"
+	getUserErr         userHandlersErrCode = "users-005"
 	UpdateUserErr      userHandlersErrCode = "users-006"
 )
 
 type IUsersHandler interface {
-	SignUpCustomer(c *fiber.Ctx) error
-	SignIn(c *fiber.Ctx) error
+	SignUp(c *fiber.Ctx) error
+	LogIn(c *fiber.Ctx) error
 	// RefreshPassport(c *fiber.Ctx) error
 	SignOut(c *fiber.Ctx) error
-	GetUserProfile(c *fiber.Ctx) error
+	GetUser(c *fiber.Ctx) error
 	UpdateUser(c *fiber.Ctx) error
 }
 
@@ -40,7 +40,7 @@ func UsersHandler(cfg config.IConfig, usersUsecase usersUsecases.IUsersUsecase) 
 	}
 }
 
-func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
+func (h *usersHandler) SignUp(c *fiber.Ctx) error {
 	// Request body parser
 	req := &users.RegisterReq{}
 
@@ -60,9 +60,8 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 			"email pattern is invalid",
 		).Res()
 	}
-
 	// Insert
-	result, err := h.usersUsecase.InsertCustomer(&req.User)
+	result, err := h.usersUsecase.InsertCustomer(req.User)
 	if err != nil {
 		switch err.Error() {
 		case "username has been used":
@@ -88,7 +87,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	return entities.NewResponse(c).Success(fiber.StatusCreated, result).Res()
 }
 
-func (h *usersHandler) SignIn(c *fiber.Ctx) error {
+func (h *usersHandler) LogIn(c *fiber.Ctx) error {
 	req := new(users.UserSignin)
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
@@ -109,29 +108,8 @@ func (h *usersHandler) SignIn(c *fiber.Ctx) error {
 	return entities.NewResponse(c).Success(fiber.StatusOK, passport).Res()
 }
 
-// func (h *usersHandler) RefreshPassport(c *fiber.Ctx) error {
-// 	req := new(users.UserRefreshCredential)
-// 	if err := c.BodyParser(req); err != nil {
-// 		return entities.NewResponse(c).Error(
-// 			fiber.ErrBadRequest.Code,
-// 			string(refreshPassportErr),
-// 			err.Error(),
-// 		).Res()
-// 	}
-
-// 	passport, err := h.usersUsecase.RefreshPassport(req)
-// 	if err != nil {
-// 		return entities.NewResponse(c).Error(
-// 			fiber.ErrBadRequest.Code,
-// 			string(refreshPassportErr),
-// 			err.Error(),
-// 		).Res()
-// 	}
-// 	return entities.NewResponse(c).Success(fiber.StatusOK, passport).Res()
-// }
-
 func (h *usersHandler) SignOut(c *fiber.Ctx) error {
-	req := new(users.Oauth)
+	req := new(users.OauthToken)
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -150,23 +128,22 @@ func (h *usersHandler) SignOut(c *fiber.Ctx) error {
 	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
 }
 
-func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
-	userId := c.Locals("userId").(int)
-
+func (h *usersHandler) GetUser(c *fiber.Ctx) error {
+	token := c.Locals("accessToken").(string)
 	// Get profile
-	result, err := h.usersUsecase.GetUserProfile(userId)
+	result, err := h.usersUsecase.GetUser(token)
 	if err != nil {
 		switch err.Error() {
 		case "get user failed: sql: no rows in result set":
 			return entities.NewResponse(c).Error(
 				fiber.ErrBadRequest.Code,
-				string(getUserProfileErr),
+				string(getUserErr),
 				err.Error(),
 			).Res()
 		default:
 			return entities.NewResponse(c).Error(
 				fiber.ErrInternalServerError.Code,
-				string(getUserProfileErr),
+				string(getUserErr),
 				err.Error(),
 			).Res()
 		}
@@ -176,7 +153,8 @@ func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
 
 func (h *usersHandler) UpdateUser(c *fiber.Ctx) error {
 	userId := c.Locals("userId").(int)
-	req := new(users.UserCredentialCheck)
+	token := c.Locals("accessToken").(string)
+	req := new(users.UserCredentialInput)
 
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
@@ -185,9 +163,9 @@ func (h *usersHandler) UpdateUser(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
-
-	req.Id = userId
-	ret, err := h.usersUsecase.UpdateUser(req)
+	req.User.AccessToken = token
+	req.User.Id = userId
+	ret, err := h.usersUsecase.UpdateUser(&req.User)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,

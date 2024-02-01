@@ -24,6 +24,7 @@ import (
 type IModulefactory interface {
 	MonitorModule()
 	UsersModule()
+	UserModule()
 	ProfileModule()
 	ArticleModule()
 	CommentModule()
@@ -62,13 +63,19 @@ func (m *moduleFactory) UsersModule() {
 	handler := usershandlers.UsersHandler(m.server.cfg, usecase)
 
 	router := m.router.Group("/users")
-	router.Post("/", handler.SignUpCustomer)
-	router.Post("/login", handler.SignIn)
-	router.Get("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.GetUserProfile)
-	router.Post("/signout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.SignOut)
-	router.Put("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateUser)
-	// router.Post("/refresh", handler.RefreshPassport)
+	router.Post("/", handler.SignUp)
+	router.Post("/login", handler.LogIn)
+	router.Post("/logout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.SignOut)
+}
 
+func (m *moduleFactory) UserModule() {
+	repository := usersrepositories.UsersRepository(m.server.db)
+	usecase := usersusecases.UsersUsecase(m.server.cfg, repository)
+	handler := usershandlers.UsersHandler(m.server.cfg, usecase)
+
+	router := m.router.Group("/user")
+	router.Get("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.GetUser)
+	router.Put("/", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.UpdateUser)
 }
 
 func (m *moduleFactory) ProfileModule() {

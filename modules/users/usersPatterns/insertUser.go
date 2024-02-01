@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NattpkJsw/real-world-api-go/modules/users"
@@ -51,8 +52,8 @@ func (f *userReq) Customer() (IInsertUser, error) {
 	if err := f.db.QueryRowContext(
 		ctx,
 		query,
-		f.req.Email,
-		f.req.Username,
+		strings.ToLower(f.req.Email),
+		strings.ToLower(f.req.Username),
 		f.req.Password,
 	).Scan(&f.id); err != nil {
 		switch err.Error() {
@@ -91,7 +92,6 @@ func (f *userReq) Result() (*users.User, error) {
 	if err := json.Unmarshal(data, &user); err != nil {
 		return nil, fmt.Errorf("unmarshal user failed: %v", err)
 	}
-	fmt.Println("user=== ", user.Email)
 
 	return user, nil
 }

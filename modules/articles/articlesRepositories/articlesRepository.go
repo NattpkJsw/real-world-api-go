@@ -49,8 +49,8 @@ func (r *articlesRepository) GetSingleArticle(articleId int, userId int) (*artic
 				JOIN "tags" AS "t" ON "at"."tag_id" = "t"."id"
 				WHERE "a"."id" = "at"."article_id"
 			) AS "taglist",
-			"a"."created_at",
-			"a"."updated_at",
+			"a"."createdat",
+			"a"."updatedat",
 			(
 				SELECT
 				CASE WHEN EXISTS(

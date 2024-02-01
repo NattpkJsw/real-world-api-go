@@ -58,6 +58,7 @@ func (u *articlesUsecase) GetArticlesFeed(req *articles.ArticleFeedFilter, userI
 	input := &articles.ArticleFilter{
 		Limit:  req.Limit,
 		Offset: req.Offset,
+		IsFeed: true,
 	}
 	articleList, count, err := u.articlesRepository.GetArticlesList(input, userId)
 

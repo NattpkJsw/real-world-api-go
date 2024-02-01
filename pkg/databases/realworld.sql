@@ -5,8 +5,8 @@ CREATE TABLE "users" (
   "password" varchar,
   "image" varchar,
   "bio" text,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "createdat" timestamp,
+  "updatedat" timestamp
 );
 
 CREATE TABLE "user_follows" (
@@ -20,8 +20,8 @@ CREATE TABLE "articles" (
   "title" varchar,
   "description" varchar,
   "body" text,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "createdat" timestamp,
+  "updatedat" timestamp
 );
 
 CREATE TABLE "article_favorites" (
@@ -34,8 +34,8 @@ CREATE TABLE "comments" (
   "body" text,
   "article_id" int,
   "author_id" int,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "createdat" timestamp,
+  "updatedat" timestamp
 );
 
 CREATE TABLE "tags" (
@@ -52,9 +52,8 @@ CREATE TABLE "oauth" (
   "id" varchar PRIMARY KEY,
   "user_id" varchar,
   "access_token" varchar,
-  "refresh_token" varchar,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "createdat" timestamp,
+  "updatedat" timestamp
 );
 
 ALTER TABLE "user_follows" ADD FOREIGN KEY ("follower_id") REFERENCES "users" ("id");

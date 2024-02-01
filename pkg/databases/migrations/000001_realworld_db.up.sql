@@ -4,10 +4,10 @@ SET TIME ZONE 'Asia/Bangkok';
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE OR REPLACE FUNCTION set_updated_at_column()
+CREATE OR REPLACE FUNCTION set_updatedat_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = now();
+    NEW.updatedat = now();
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -20,17 +20,16 @@ CREATE TABLE "users" (
   "password" VARCHAR NOT NULL,
   "image" VARCHAR,
   "bio" TEXT,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "oauth" (
   "id" uuid NOT NULL UNIQUE PRIMARY KEY DEFAULT uuid_generate_v4(),
   "user_id" INT NOT NULL,
   "access_token" VARCHAR NOT NULL,
-  "refresh_token" VARCHAR NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "user_follows" (
@@ -45,8 +44,8 @@ CREATE TABLE "articles" (
   "title" VARCHAR UNIQUE NOT NULL ,
   "description" VARCHAR,
   "body" TEXT,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "article_favorites" (
@@ -59,8 +58,8 @@ CREATE TABLE "comments" (
   "body" TEXT NOT NULL,
   "article_id" INT NOT NULL,
   "author_id" INT NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE "tags" (
@@ -84,9 +83,9 @@ ALTER TABLE "article_tags" ADD FOREIGN KEY ("article_id") REFERENCES "articles" 
 ALTER TABLE "article_tags" ADD FOREIGN KEY ("tag_id") REFERENCES "tags" ("id") ON DELETE CASCADE;
 ALTER TABLE "oauth" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 
-CREATE TRIGGER set_updated_at_timestamp_users_table BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
-CREATE TRIGGER set_updated_at_timestamp_oauth_table BEFORE UPDATE ON "oauth" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
-CREATE TRIGGER set_updated_at_timestamp_articles_table BEFORE UPDATE ON "articles" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
-CREATE TRIGGER set_updated_at_timestamp_comments_table BEFORE UPDATE ON "comments" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
+CREATE TRIGGER set_updatedat_timestamp_users_table BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE set_updatedat_column();
+CREATE TRIGGER set_updatedat_timestamp_oauth_table BEFORE UPDATE ON "oauth" FOR EACH ROW EXECUTE PROCEDURE set_updatedat_column();
+CREATE TRIGGER set_updatedat_timestamp_articles_table BEFORE UPDATE ON "articles" FOR EACH ROW EXECUTE PROCEDURE set_updatedat_column();
+CREATE TRIGGER set_updatedat_timestamp_comments_table BEFORE UPDATE ON "comments" FOR EACH ROW EXECUTE PROCEDURE set_updatedat_column();
 
 COMMIT;
