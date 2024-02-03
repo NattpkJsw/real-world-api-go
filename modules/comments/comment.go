@@ -8,6 +8,14 @@ type Comment struct {
 	Author    map[string]interface{} `json:"author"`
 }
 
+type JSONComment struct {
+	Comments []*Comment `json:"comments"`
+}
+
+type JSONSingleComment struct {
+	Comment Comment `json:"comment"`
+}
+
 type Author struct {
 	Username  string `json:"username"`
 	Bio       string `json:"bio"`
@@ -19,4 +27,8 @@ type CommentCredential struct {
 	Body      string `json:"body"`
 	AuthorID  int    `json:"author_id"`
 	ArticleID int    `json:"article_id"`
+}
+
+type JSONCommentCredential struct {
+	Comment *CommentCredential `json:"comment"`
 }

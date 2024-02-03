@@ -70,7 +70,7 @@ func (h *middlewaresHandler) Logger() fiber.Handler {
 
 func (h *middlewaresHandler) JwtAuth(jwtLevel string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+		token := strings.TrimPrefix(c.Get("Authorization"), "Token ")
 		if jwtLevel == string(middlewares.ReadLevel) && token == "" {
 			c.Locals("userId", 0)
 			return c.Next()

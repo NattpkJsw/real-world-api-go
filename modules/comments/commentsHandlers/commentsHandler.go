@@ -39,7 +39,7 @@ func CommentsHandler(cfg config.IConfig, commentsUsecase commentsusecases.IComme
 }
 
 func (h *commentsHandler) FindComments(c *fiber.Ctx) error {
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(
@@ -65,10 +65,8 @@ func (h *commentsHandler) FindComments(c *fiber.Ctx) error {
 
 func (h *commentsHandler) InsertComment(c *fiber.Ctx) error {
 	userID := c.Locals("userId").(int)
-	req := &comments.CommentCredential{
-		AuthorID: userID,
-	}
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	req := new(comments.JSONCommentCredential)
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(
@@ -85,7 +83,8 @@ func (h *commentsHandler) InsertComment(c *fiber.Ctx) error {
 		).Res()
 	}
 
-	comment, err := h.commentsUsecase.InsertComment(slug, req)
+	req.Comment.AuthorID = userID
+	comment, err := h.commentsUsecase.InsertComment(slug, req.Comment)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,

@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE OR REPLACE FUNCTION set_updatedat_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updatedat = now();
+    NEW.updatedat = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -20,16 +20,16 @@ CREATE TABLE "users" (
   "password" VARCHAR NOT NULL,
   "image" VARCHAR,
   "bio" TEXT,
-  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
-  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "oauth" (
   "id" uuid NOT NULL UNIQUE PRIMARY KEY DEFAULT uuid_generate_v4(),
   "user_id" INT NOT NULL,
   "access_token" VARCHAR NOT NULL,
-  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
-  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "user_follows" (
@@ -44,8 +44,8 @@ CREATE TABLE "articles" (
   "title" VARCHAR UNIQUE NOT NULL ,
   "description" VARCHAR,
   "body" TEXT,
-  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
-  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "article_favorites" (
@@ -58,8 +58,8 @@ CREATE TABLE "comments" (
   "body" TEXT NOT NULL,
   "article_id" INT NOT NULL,
   "author_id" INT NOT NULL,
-  "createdat" TIMESTAMP NOT NULL DEFAULT now(),
-  "updatedat" TIMESTAMP NOT NULL DEFAULT now()
+  "createdat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedat" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "tags" (
@@ -75,6 +75,7 @@ CREATE TABLE "article_tags" (
 ALTER TABLE "user_follows" ADD FOREIGN KEY ("follower_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ALTER TABLE "user_follows" ADD FOREIGN KEY ("following_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ALTER TABLE "articles" ADD FOREIGN KEY ("author_id") REFERENCES "users" ("id") ON DELETE CASCADE;
+ALTER TABLE "articles" ADD CONSTRAINT unique_title_slug UNIQUE ("title", "slug");
 ALTER TABLE "article_favorites" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ALTER TABLE "article_favorites" ADD FOREIGN KEY ("article_id") REFERENCES "articles" ("id") ON DELETE CASCADE;
 ALTER TABLE "comments" ADD FOREIGN KEY ("article_id") REFERENCES "articles" ("id") ON DELETE CASCADE;

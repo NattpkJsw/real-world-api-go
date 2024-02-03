@@ -13,6 +13,10 @@ type Article struct {
 	Author         *Author   `json:"author"`
 }
 
+type JSONArticle struct {
+	Article *Article `json:"article"`
+}
+
 type Author struct {
 	Username  *string `json:"username"`
 	Bio       *string `json:"bio"`
@@ -47,6 +51,10 @@ type ArticleCredential struct {
 	Body        string    `json:"body"`
 	TagList     []*string `json:"tagList"`
 	Slug        string    `json:"slug"`
+}
+
+type JSONArticleCredential struct {
+	Article *ArticleCredential `json:"article"`
 }
 
 type TagList struct {

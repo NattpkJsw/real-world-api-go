@@ -65,7 +65,7 @@ func (m *moduleFactory) UsersModule() {
 	router := m.router.Group("/users")
 	router.Post("/", handler.SignUp)
 	router.Post("/login", handler.LogIn)
-	router.Post("/logout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.SignOut)
+	router.Post("/logout", m.middle.JwtAuth(string(middlewares.WriteLevel)), handler.LogOut)
 }
 
 func (m *moduleFactory) UserModule() {

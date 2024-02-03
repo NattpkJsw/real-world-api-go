@@ -112,19 +112,8 @@ func (u *usersUsecase) GetUser(token string) (*users.ResponsePassport, error) {
 		return nil, err
 	}
 
-	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
-		Id: profile.Id,
-	})
+	passport, err := u.refreshToken(token)
 	if err != nil {
-		return nil, err
-	}
-	passport := &users.UserToken{
-		Id:          oauth.Id,
-		User_Id:     oauth.UserId,
-		AccessToken: accessToken.SignToken(),
-	}
-
-	if err := u.usersRepository.UpdateOauth(passport); err != nil {
 		return nil, err
 	}
 
@@ -149,24 +138,8 @@ func (u *usersUsecase) UpdateUser(user *users.UserCredentialCheck) (*users.Respo
 		return nil, err
 	}
 
-	oauthID, err := u.usersRepository.FindOneOath(user.AccessToken)
+	passport, err := u.refreshToken(user.AccessToken)
 	if err != nil {
-		return nil, err
-	}
-
-	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
-		Id: user.Id,
-	})
-	if err != nil {
-		return nil, err
-	}
-	passport := &users.UserToken{
-		Id:          oauthID.Id,
-		User_Id:     oauthID.UserId,
-		AccessToken: accessToken.SignToken(),
-	}
-
-	if err := u.usersRepository.UpdateOauth(passport); err != nil {
 		return nil, err
 	}
 
@@ -181,4 +154,29 @@ func (u *usersUsecase) UpdateUser(user *users.UserCredentialCheck) (*users.Respo
 		User: *userOut,
 	}
 	return userRes, nil
+}
+
+func (u *usersUsecase) refreshToken(accessTokenIn string) (*users.UserToken, error) {
+	oauthID, err := u.usersRepository.FindOneOath(accessTokenIn)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
+		Id: oauthID.UserId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	passport := &users.UserToken{
+		Id:          oauthID.Id,
+		User_Id:     oauthID.UserId,
+		AccessToken: accessToken.SignToken(),
+	}
+
+	if err := u.usersRepository.UpdateOauth(passport); err != nil {
+		return nil, err
+	}
+
+	return passport, nil
 }

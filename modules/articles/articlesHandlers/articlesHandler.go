@@ -51,9 +51,9 @@ func ArticlesHandler(cfg config.IConfig, articlesUsecase articlesusecases.IArtic
 }
 
 func (h *articlesHandler) GetSingleArticle(c *fiber.Ctx) error {
-	pathVariable := strings.Trim(c.Params("slug"), " ")
-	slug, err := url.QueryUnescape(pathVariable)
-	fmt.Println("pass herer")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
+	slug, err := url.PathUnescape(pathVariable)
+
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -137,10 +137,9 @@ func (h *articlesHandler) GetArticlesFeed(c *fiber.Ctx) error {
 }
 
 func (h *articlesHandler) CreateArticle(c *fiber.Ctx) error {
-	userId := c.Locals("userId").(int)
-	req := &articles.ArticleCredential{
-		Author: userId,
-	}
+	userID := c.Locals("userId").(int)
+	req := new(articles.JSONArticleCredential)
+
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -148,8 +147,9 @@ func (h *articlesHandler) CreateArticle(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
+	req.Article.Author = userID
 
-	article, err := h.articlesUsecase.CreateArticle(req)
+	article, err := h.articlesUsecase.CreateArticle(req.Article)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -161,7 +161,7 @@ func (h *articlesHandler) CreateArticle(c *fiber.Ctx) error {
 }
 
 func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(
@@ -171,7 +171,7 @@ func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
 		).Res()
 	}
 	userID := c.Locals("userId").(int)
-	req := &articles.ArticleCredential{}
+	req := new(articles.JSONArticleCredential)
 	if err := c.BodyParser(req); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
@@ -179,9 +179,9 @@ func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
-	req.Slug = slug
+	req.Article.Slug = slug
 
-	article, err := h.articlesUsecase.UpdateArticle(req, userID)
+	article, err := h.articlesUsecase.UpdateArticle(req.Article, userID)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -195,7 +195,7 @@ func (h *articlesHandler) UpdateArticle(c *fiber.Ctx) error {
 
 func (h *articlesHandler) DeleteArticle(c *fiber.Ctx) error {
 	userId := c.Locals("userId").(int)
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(
@@ -215,8 +215,10 @@ func (h *articlesHandler) DeleteArticle(c *fiber.Ctx) error {
 }
 
 func (h *articlesHandler) FavoriteArticle(c *fiber.Ctx) error {
+
+	fmt.Println("favoriteeee")
 	userID := c.Locals("userId").(int)
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(
@@ -239,8 +241,9 @@ func (h *articlesHandler) FavoriteArticle(c *fiber.Ctx) error {
 }
 
 func (h *articlesHandler) UnfavoriteArticle(c *fiber.Ctx) error {
+	fmt.Println("unfavoriteeee")
 	userID := c.Locals("userId").(int)
-	pathVariable := strings.Trim(c.Params("slug"), " ")
+	pathVariable := strings.TrimSpace(c.Params("slug"))
 	slug, err := url.QueryUnescape(pathVariable)
 	if err != nil {
 		return entities.NewResponse(c).Error(

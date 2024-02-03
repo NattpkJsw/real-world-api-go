@@ -8,8 +8,8 @@ import (
 )
 
 type ICommentUsecase interface {
-	FindComments(slug string, userID int) ([]*comments.Comment, error)
-	InsertComment(slug string, req *comments.CommentCredential) (*comments.Comment, error)
+	FindComments(slug string, userID int) (*comments.JSONComment, error)
+	InsertComment(slug string, req *comments.CommentCredential) (*comments.JSONSingleComment, error)
 	DeleteComment(commentID, userID int) error
 }
 
@@ -27,21 +27,40 @@ func CommentUsecase(cfg config.IConfig, commentRepository commentsrepositories.I
 	}
 }
 
-func (u *commentUsecase) FindComments(slug string, userID int) ([]*comments.Comment, error) {
+func (u *commentUsecase) FindComments(slug string, userID int) (*comments.JSONComment, error) {
 	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
 	if err != nil {
 		return nil, err
 	}
-	return u.commentRepository.FindComments(articleID, userID)
+	commentOut, err := u.commentRepository.FindComments(articleID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonComments := &comments.JSONComment{
+		Comments: commentOut,
+	}
+
+	return jsonComments, nil
 }
 
-func (u *commentUsecase) InsertComment(slug string, req *comments.CommentCredential) (*comments.Comment, error) {
+func (u *commentUsecase) InsertComment(slug string, req *comments.CommentCredential) (*comments.JSONSingleComment, error) {
 	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
 	if err != nil {
 		return nil, err
 	}
 	req.ArticleID = articleID
-	return u.commentRepository.InsertComment(req)
+	singleComment, err := u.commentRepository.InsertComment(req)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonComment := &comments.JSONSingleComment{
+		Comment: *singleComment,
+	}
+
+	return jsonComment, nil
+
 }
 
 func (u *commentUsecase) DeleteComment(commentID, userID int) error {

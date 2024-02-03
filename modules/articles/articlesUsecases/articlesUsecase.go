@@ -7,14 +7,14 @@ import (
 )
 
 type IArticlesUsecase interface {
-	GetSingleArticle(slug string, userId int) (*articles.Article, error)
+	GetSingleArticle(slug string, userId int) (*articles.JSONArticle, error)
 	GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error)
 	GetArticlesFeed(req *articles.ArticleFeedFilter, userId int) (*articles.ArticleList, error)
-	CreateArticle(req *articles.ArticleCredential) (*articles.Article, error)
-	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error)
+	CreateArticle(req *articles.ArticleCredential) (*articles.JSONArticle, error)
+	UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.JSONArticle, error)
 	DeleteArticle(slug string, userID int) error
-	FavoriteArticle(slug string, userID int) (*articles.Article, error)
-	UnfavoriteArticle(slug string, userID int) (*articles.Article, error)
+	FavoriteArticle(slug string, userID int) (*articles.JSONArticle, error)
+	UnfavoriteArticle(slug string, userID int) (*articles.JSONArticle, error)
 	GetTagsList() (*articles.TagList, error)
 }
 
@@ -30,7 +30,7 @@ func ArticlesUsecase(cfg config.IConfig, articlesRepository articlesrepositories
 	}
 }
 
-func (u *articlesUsecase) GetSingleArticle(slug string, userId int) (*articles.Article, error) {
+func (u *articlesUsecase) GetSingleArticle(slug string, userId int) (*articles.JSONArticle, error) {
 	articleId, err := u.articlesRepository.GetArticleIdBySlug(slug)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,10 @@ func (u *articlesUsecase) GetSingleArticle(slug string, userId int) (*articles.A
 	if err != nil {
 		return nil, err
 	}
-	return article, nil
+	jsonArticle := &articles.JSONArticle{
+		Article: article,
+	}
+	return jsonArticle, nil
 }
 
 func (u *articlesUsecase) GetArticlesList(req *articles.ArticleFilter, userId int) (*articles.ArticleList, error) {
@@ -70,18 +73,35 @@ func (u *articlesUsecase) GetArticlesFeed(req *articles.ArticleFeedFilter, userI
 	return articlesOut, err
 }
 
-func (u *articlesUsecase) CreateArticle(req *articles.ArticleCredential) (*articles.Article, error) {
-	return u.articlesRepository.CreateArticle(req)
+func (u *articlesUsecase) CreateArticle(req *articles.ArticleCredential) (*articles.JSONArticle, error) {
+	article, err := u.articlesRepository.CreateArticle(req)
+	if err != nil {
+		return nil, err
+	}
+	jsonArticle := &articles.JSONArticle{
+		Article: article,
+	}
+
+	return jsonArticle, nil
+
 }
 
-func (u *articlesUsecase) UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.Article, error) {
+func (u *articlesUsecase) UpdateArticle(req *articles.ArticleCredential, userID int) (*articles.JSONArticle, error) {
 	articleID, err := u.articlesRepository.GetArticleIdBySlug(req.Slug)
 	if err != nil {
 		return nil, err
 	}
 	req.Id = articleID
 
-	return u.articlesRepository.UpdateArticle(req, userID)
+	article, err := u.articlesRepository.UpdateArticle(req, userID)
+	if err != nil {
+		return nil, err
+	}
+	jsonArticle := &articles.JSONArticle{
+		Article: article,
+	}
+
+	return jsonArticle, nil
 }
 
 func (u *articlesUsecase) DeleteArticle(slug string, userID int) error {
@@ -92,20 +112,34 @@ func (u *articlesUsecase) DeleteArticle(slug string, userID int) error {
 	return u.articlesRepository.DeleteArticle(artcleID, userID)
 }
 
-func (u *articlesUsecase) FavoriteArticle(slug string, userID int) (*articles.Article, error) {
+func (u *articlesUsecase) FavoriteArticle(slug string, userID int) (*articles.JSONArticle, error) {
 	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
 	if err != nil {
 		return nil, err
 	}
-	return u.articlesRepository.FavoriteArticle(userID, articleID)
+	articleOut, err := u.articlesRepository.FavoriteArticle(userID, articleID)
+	if err != nil {
+		return nil, err
+	}
+	jsonArticle := &articles.JSONArticle{
+		Article: articleOut,
+	}
+	return jsonArticle, nil
 }
 
-func (u *articlesUsecase) UnfavoriteArticle(slug string, userID int) (*articles.Article, error) {
+func (u *articlesUsecase) UnfavoriteArticle(slug string, userID int) (*articles.JSONArticle, error) {
 	articleID, err := u.articlesRepository.GetArticleIdBySlug(slug)
 	if err != nil {
 		return nil, err
 	}
-	return u.articlesRepository.UnfavoriteArticle(userID, articleID)
+	articleOut, err := u.articlesRepository.UnfavoriteArticle(userID, articleID)
+	if err != nil {
+		return nil, err
+	}
+	jsonArticle := &articles.JSONArticle{
+		Article: articleOut,
+	}
+	return jsonArticle, nil
 }
 
 func (u *articlesUsecase) GetTagsList() (*articles.TagList, error) {
