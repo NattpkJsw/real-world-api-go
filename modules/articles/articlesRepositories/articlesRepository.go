@@ -55,9 +55,8 @@ func (r *articlesRepository) GetSingleArticle(articleId int, userId int) (*artic
 				SELECT
 				CASE WHEN EXISTS(
 					SELECT 1
-					FROM "articles" "a"
-					JOIN "article_favorites" AS "af" ON "af"."article_id" = "a"."id"
-					WHERE "af"."user_id" = $2
+					FROM "article_favorites" "af"
+					WHERE "af"."user_id" = $2 AND "af"."article_id" = "a"."id"
 				) THEN TRUE ELSE FALSE END
 			) AS "favorited",
 			(
