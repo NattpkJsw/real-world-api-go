@@ -13,6 +13,7 @@ import (
 
 type IServer interface {
 	Start()
+	GetServer() *server
 }
 
 type server struct {
@@ -68,4 +69,8 @@ func (s *server) Start() {
 	// Listen to host:port
 	log.Printf("server is starting on %v", s.cfg.App().Url())
 	s.app.Listen(s.cfg.App().Url())
+}
+
+func (s *server) GetServer() *server {
+	return s
 }

@@ -29,6 +29,7 @@ type IModulefactory interface {
 	ArticleModule()
 	CommentModule()
 	TagModule()
+	ArticlesModule() IArticleModule
 }
 
 type moduleFactory struct {
