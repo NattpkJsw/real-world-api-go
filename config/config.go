@@ -36,7 +36,7 @@ func LoadConfig(path string) IConfig {
 				return time.Duration(int64(t) * int64(math.Pow10(9)))
 			}(),
 			writeTimeout: func() time.Duration {
-				t, err := strconv.Atoi(envMap["APP_WRTIE_TIMEOUT"])
+				t, err := strconv.Atoi(envMap["APP_WRITE_TIMEOUT"])
 				if err != nil {
 					log.Fatalf("load write time out failed: %v", err)
 				}

@@ -43,7 +43,7 @@ func (r *Response) Error(code int, traceId, msg string) IResponse {
 		Msg:     msg,
 	}
 	r.IsError = true
-	logger.InitLogger(r.Context, &r.ErrorRes).Print().Save()
+	logger.InitLogger(r.Context, &r.ErrorRes).Print()
 	return r
 }
 func (r *Response) Res() error {
