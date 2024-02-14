@@ -23,13 +23,6 @@ I develop the application follow the requirement [Backend specs](https://realwor
 - [Docker](https://www.docker.com/)
 - [Go](https://go.dev/)
 
-## Development
-1. Create PostgreSQL database.
-2. Migration, using the following command (edit path to migrations to full path of real-world-api/pkg/databases/migrations).
->$ migrate -source file://path/to/migrations -database 'postgres://admin:123456@localhost:5432/realworld-db?sslmode=disable' -verbose up
-3. Run the app (Development is using configuration in .env.dev).
->$ air -c .air.dev.toml
-
 ## Build
 1. Build the image run .
 >$ docker compose up -d
